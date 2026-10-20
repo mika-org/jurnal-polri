@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 140" fill="none" preserveAspectRatio="none">
+  <defs>
+    <linearGradient id="swooshGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F28C00" stop-opacity="0.85" />
+      <stop offset="60%" stop-color="#FFD9A8" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#7F0000" stop-opacity="0" />
+    </linearGradient>
+    <linearGradient id="subtleGrad" x1="0%" y1="50%" x2="100%" y2="50%">
+      <stop offset="0%" stop-color="#FFD9A8" stop-opacity="0.3" />
+      <stop offset="50%" stop-color="#F28C00" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#7F0000" stop-opacity="0" />
+    </linearGradient>
+  </defs>
+  <path d="M-50 -20 C250 80, 500 130, 850 40 C1100 -20, 1350 20, 1500 0 L1500 -50 L-50 -50 Z" fill="url(#subtleGrad)" />
+  <path d="M-100 -30 C150 110, 420 140, 780 25 C1050 -55, 1280 45, 1520 -10 L1520 -70 L-100 -70 Z" fill="url(#swooshGrad)" />
+</svg>

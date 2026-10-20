@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 75" width="100%" height="100%">
+  <defs>
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFD700" />
+      <stop offset="50%" stop-color="#F28C00" />
+      <stop offset="100%" stop-color="#B91C1C" />
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFF2A3" />
+      <stop offset="100%" stop-color="#FFD700" />
+    </linearGradient>
+  </defs>
+
+  <!-- Police Shield Badge Icon -->
+  <g transform="translate(10, 8)">
+    <!-- Outer Shield -->
+    <path d="M30 2 C45 2, 58 10, 58 10 C58 35, 45 52, 30 58 C15 52, 2 35, 2 10 C2 10, 15 2, 30 2 Z" 
+          fill="url(#shieldGrad)" stroke="#FFFFFF" stroke-width="2" filter="drop-shadow(0px 2px 4px rgba(0,0,0,0.3))"/>
+    <!-- Inner Shield Border -->
+    <path d="M30 6 C42 6, 52 13, 52 13 C52 33, 41 47, 30 52 C19 47, 8 33, 8 13 C8 13, 18 6, 30 6 Z" 
+          fill="#7F0000" stroke="#FFD700" stroke-width="1.5"/>
+    <!-- Star Emblem -->
+    <polygon points="30,14 34,23 44,23 36,29 39,39 30,33 21,39 24,29 16,23 26,23" fill="url(#goldGrad)"/>
+    <!-- Laurel Wreath arc -->
+    <path d="M16 42 Q30 48 44 42" stroke="#FFD700" stroke-width="2" fill="none" stroke-linecap="round"/>
+  </g>
+
+  <!-- Typography -->
+  <text x="80" y="38" font-family="'Inter', system-ui, -apple-system, sans-serif" font-size="28" font-weight="900" fill="#FFFFFF" letter-spacing="1">
+    JURNAL <tspan fill="#FFD700">POLISI</tspan>
+  </text>
+  <text x="82" y="55" font-family="'Inter', system-ui, -apple-system, sans-serif" font-size="10.5" font-weight="600" fill="#FFD9A8" letter-spacing="2.5">
+    PORTAL INFORMASI &amp; HUKUM
+  </text>
+</svg>

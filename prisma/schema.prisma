@@ -1,0 +1,220 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum StatusArtikel {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum PenempatanIklan {
+  SIDEBAR
+  HOME_STRIP
+  ARTICLE_TOP
+  FOOTER
+}
+
+// ── Akses & Pengguna ─────────────────────────────
+model SuperGrup {
+  id            String    @id @default(uuid()) @db.Uuid
+  nama          String    @unique
+  slug          String    @unique
+  deskripsi     String?
+  adalah_sistem Boolean   @default(false)
+  created_at    DateTime  @default(now())
+  updated_at    DateTime  @updatedAt
+  deleted_at    DateTime?
+  peran         Peran[]
+
+  @@map("super_grup")
+}
+
+model Peran {
+  id            String          @id @default(uuid()) @db.Uuid
+  nama          String
+  slug          String
+  super_grup_id String          @db.Uuid
+  deskripsi     String?
+  created_at    DateTime        @default(now())
+  updated_at    DateTime        @updatedAt
+  deleted_at    DateTime?
+  super_grup    SuperGrup       @relation(fields: [super_grup_id], references: [id], onDelete: Cascade)
+  peran_izin    PeranIzin[]
+  pengguna      Pengguna[]
+
+  @@unique([super_grup_id, slug])
+  @@map("peran")
+}
+
+model Izin {
+  id         String      @id @default(uuid()) @db.Uuid
+  kode       String      @unique
+  deskripsi  String?
+  created_at DateTime    @default(now())
+  updated_at DateTime    @updatedAt
+  peran_izin PeranIzin[]
+
+  @@map("izin")
+}
+
+model PeranIzin {
+  peran_id String @db.Uuid
+  izin_id  String @db.Uuid
+  peran    Peran  @relation(fields: [peran_id], references: [id], onDelete: Cascade)
+  izin     Izin   @relation(fields: [izin_id], references: [id], onDelete: Cascade)
+
+  @@id([peran_id, izin_id])
+  @@map("peran_izin")
+}
+
+model Pengguna {
+  id             String          @id @default(uuid()) @db.Uuid
+  nama_pengguna  String          @unique
+  nama_lengkap   String
+  email          String?         @unique
+  kata_sandi     String
+  aktif          Boolean         @default(true)
+  terakhir_masuk DateTime?
+  peran_id       String          @db.Uuid
+  peran          Peran           @relation(fields: [peran_id], references: [id])
+  artikel        Artikel[]
+  token_penyegar TokenPenyegar[]
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  deleted_at     DateTime?
+
+  @@map("pengguna")
+}
+
+model TokenPenyegar {
+  id              String    @id @default(uuid()) @db.Uuid
+  pengguna_id     String    @db.Uuid
+  pengguna        Pengguna  @relation(fields: [pengguna_id], references: [id], onDelete: Cascade)
+  token_hash      String    @unique
+  kadaluarsa_pada DateTime
+  dicabut_pada    DateTime?
+  created_at      DateTime  @default(now())
+
+  @@map("token_penyegar")
+}
+
+// ── Konten ───────────────────────────────────────
+model Kategori {
+  id              String    @id @default(uuid()) @db.Uuid
+  nama            String    @unique
+  slug            String    @unique
+  slogan          String?
+  ikon            String?
+  tampil_di_cepat Boolean   @default(false)
+  urutan          Int       @default(0)
+  artikel         Artikel[]
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
+  deleted_at      DateTime?
+
+  @@map("kategori")
+}
+
+model Artikel {
+  id               String        @id @default(uuid()) @db.Uuid
+  judul            String
+  slug             String        @unique
+  ringkasan        String
+  konten           String        @db.Text
+  gambar_sampul    String
+  status           StatusArtikel @default(DRAFT)
+  is_draft         Boolean       @default(false)
+  adalah_utama     Boolean       @default(false)
+  adalah_pilihan   Boolean       @default(false)
+  dilihat          Int           @default(0)
+  diterbitkan_pada DateTime?
+  penulis_id       String        @db.Uuid
+  kategori_id      String        @db.Uuid
+  penulis          Pengguna      @relation(fields: [penulis_id], references: [id])
+  kategori         Kategori      @relation(fields: [kategori_id], references: [id])
+  artikel_tag      ArtikelTag[]
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+  deleted_at       DateTime?
+
+  @@index([status, diterbitkan_pada])
+  @@index([kategori_id])
+  @@map("artikel")
+}
+
+model Tag {
+  id          String       @id @default(uuid()) @db.Uuid
+  nama        String       @unique
+  slug        String       @unique
+  artikel_tag ArtikelTag[]
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
+
+  @@map("tag")
+}
+
+model ArtikelTag {
+  artikel_id String  @db.Uuid
+  tag_id     String  @db.Uuid
+  artikel    Artikel @relation(fields: [artikel_id], references: [id], onDelete: Cascade)
+  tag        Tag     @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([artikel_id, tag_id])
+  @@map("artikel_tag")
+}
+
+model Iklan {
+  id           String          @id @default(uuid()) @db.Uuid
+  judul        String
+  gambar       String
+  tautan       String?
+  posisi       PenempatanIklan
+  aktif        Boolean         @default(true)
+  mulai_pada   DateTime?
+  selesai_pada DateTime?
+  urutan       Int             @default(0)
+  created_at   DateTime        @default(now())
+  updated_at   DateTime        @updatedAt
+  deleted_at   DateTime?
+
+  @@map("iklan")
+}
+
+model Halaman {
+  id         String   @id @default(uuid()) @db.Uuid
+  slug       String   @unique
+  judul      String
+  konten     String   @db.Text
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("halaman")
+}
+
+model Pengaturan {
+  kunci      String   @id
+  nilai      String   @db.Text
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("pengaturan")
+}
+
+model PesanKontak {
+  id         String   @id @default(uuid()) @db.Uuid
+  nama       String
+  email      String
+  telepon    String?
+  subjek     String?
+  pesan      String   @db.Text
+  dibaca     Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  @@map("pesan_kontak")
+}

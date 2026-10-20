@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-900: #6b0000;
+  --color-brand-800: #7f0000;
+  --color-brand-600: #b91c1c;
+  --color-accent-red: #e50914;
+  --color-accent-orange: #f28c00;
+  --color-accent-peach: #ffd9a8;
+  --color-surface-tint: #fbefef;
+  --font-sans: var(--font-inter), system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(127, 0, 0, 0.25);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(127, 0, 0, 0.45);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Base styles for dark mode */
+.dark body {
+  background-color: #120808;
+  color: #f3e8e8;
+}
+
+.dark .bg-surface {
+  background-color: #1e1010;
+}
+
+.dark .border-color {
+  border-color: #2e1818;
+}
