@@ -34,7 +34,9 @@ export default function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center text-white/50" />
+      <div className="w-6 h-6 text-white/50 flex items-center justify-center">
+        <Moon className="w-5 h-5" />
+      </div>
     );
   }
 
@@ -43,9 +45,13 @@ export default function ThemeToggle() {
       onClick={toggleTheme}
       id="theme-toggle-button"
       aria-label="Ganti mode gelap/terang"
-      className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all duration-200 shadow-sm"
+      className="text-white hover:text-amber-300 transition-colors p-1 flex items-center justify-center cursor-pointer focus:outline-none"
     >
-      {isDark ? <Sun className="w-4 h-4 text-amber-300" /> : <Moon className="w-4 h-4 text-white" />}
+      {isDark ? (
+        <Sun className="w-5 h-5 text-amber-300" />
+      ) : (
+        <Moon className="w-5 h-5 fill-white text-white" />
+      )}
     </button>
   );
 }

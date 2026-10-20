@@ -28,7 +28,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // If on login page and already logged in, redirect to dashboard
   if (isLoginPage && isValid) {
     return NextResponse.redirect(new URL("/admin", request.url));
   }

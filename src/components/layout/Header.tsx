@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { Search, Menu, X, ChevronDown, Shield, FileText, Scale, Newspaper } from "lucide-react";
+import { Search, Menu, X, ChevronDown, Newspaper, FileText, Scale, Shield } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 
 interface HeaderProps {
@@ -16,43 +16,42 @@ export default function Header({ categories = [] }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       router.push(`/cari?q=${encodeURIComponent(searchQuery.trim())}`);
-      setIsSearchOpen(false);
       setIsMobileMenuOpen(false);
     }
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#7F0000] border-b border-[#6B0000] shadow-md transition-colors relative overflow-visible">
-      {/* Background Decorative Swoosh */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-90">
+    <header className="sticky top-0 z-50 bg-[#680000] border-b border-[#550000] shadow-md transition-colors relative overflow-hidden select-none">
+      {/* Background Decorative Multi-Layer Orange/White Swoosh */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="relative w-full h-full">
           <Image
             src="/images/header-swoosh.svg"
             alt="Header decorative swoosh"
             fill
             priority
-            className="object-cover object-left-top"
+            className="object-cover object-left"
           />
         </div>
       </div>
 
-      <div className="relative max-w-[1280px] mx-auto px-4 lg:px-7">
-        <div className="flex items-center justify-between h-20 gap-4">
-          {/* Logo Area */}
+      <div className="relative max-w-[1340px] mx-auto px-3 sm:px-5 lg:px-7">
+        <div className="flex items-center justify-between h-20 gap-3">
+          {/* Logo Area (Left: Badge, Jurnal, Media Mitra, Polisi, Motto) */}
           <Link
             href="/"
-            className="flex items-center gap-3 shrink-0 py-2 focus:outline-none focus:ring-2 focus:ring-amber-400 rounded-lg"
+            className="relative z-10 flex items-center shrink-0 py-1 focus:outline-none"
+            aria-label="Beranda Jurnal Polisi"
           >
-            <div className="relative w-[210px] h-[52px] sm:w-[260px] sm:h-[60px]">
+            <div className="relative w-[270px] sm:w-[320px] lg:w-[340px] h-[64px]">
               <Image
                 src="/images/logo.svg"
-                alt="Jurnal Polisi"
+                alt="Jurnal Polisi - Media Mitra Polri & TNI"
                 fill
                 priority
                 className="object-contain object-left"
@@ -60,11 +59,11 @@ export default function Header({ categories = [] }: HeaderProps) {
             </div>
           </Link>
 
-          {/* Desktop Nav Pill (Rounded-full, White background with Maroon text) */}
-          <nav className="hidden lg:flex items-center bg-white/95 backdrop-blur-md rounded-full px-5 py-2 shadow-inner border border-white/20 gap-1 text-sm font-semibold text-stone-800">
+          {/* Desktop Nav Pill (White Rounded-full with Dark Red Maroon Text) */}
+          <nav className="hidden xl:flex items-center bg-white rounded-full border border-stone-200/90 px-6 py-2 shadow-xs gap-5 text-xs lg:text-[13px] font-semibold text-[#7A0C0C] shrink-0">
             <Link
               href="/"
-              className="px-3.5 py-1.5 rounded-full hover:bg-stone-100 hover:text-[#7F0000] transition-colors"
+              className="hover:text-[#B91C1C] transition-colors"
             >
               Beranda
             </Link>
@@ -76,21 +75,21 @@ export default function Header({ categories = [] }: HeaderProps) {
               onMouseLeave={() => setIsCategoryOpen(false)}
             >
               <button
-                className="flex items-center gap-1 px-3.5 py-1.5 rounded-full hover:bg-stone-100 hover:text-[#7F0000] transition-colors cursor-pointer"
+                className="flex items-center gap-1 hover:text-[#B91C1C] transition-colors cursor-pointer"
                 aria-expanded={isCategoryOpen}
               >
                 <span>Kategori</span>
-                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+                <ChevronDown className="w-3.5 h-3.5 text-[#7A0C0C]" />
               </button>
 
               {isCategoryOpen && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-stone-100 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-stone-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                   {categories.length > 0 ? (
                     categories.map((cat) => (
                       <Link
                         key={cat.id}
                         href={`/kategori/${cat.slug}`}
-                        className="block px-4 py-2 text-xs font-medium text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7F0000] transition-colors"
+                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C] transition-colors"
                         onClick={() => setIsCategoryOpen(false)}
                       >
                         {cat.nama}
@@ -100,31 +99,31 @@ export default function Header({ categories = [] }: HeaderProps) {
                     <>
                       <Link
                         href="/kategori/politik"
-                        className="block px-4 py-2 text-xs font-medium text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7F0000]"
+                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
                       >
                         Politik
                       </Link>
                       <Link
                         href="/kategori/hukum"
-                        className="block px-4 py-2 text-xs font-medium text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7F0000]"
+                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
                       >
                         Hukum
                       </Link>
                       <Link
                         href="/kategori/sosial"
-                        className="block px-4 py-2 text-xs font-medium text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7F0000]"
+                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
                       >
                         Sosial
                       </Link>
                       <Link
                         href="/kategori/patroli"
-                        className="block px-4 py-2 text-xs font-medium text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7F0000]"
+                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
                       >
                         Patroli
                       </Link>
                       <Link
                         href="/kategori/lalu-lintas"
-                        className="block px-4 py-2 text-xs font-medium text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7F0000]"
+                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
                       >
                         Lalu Lintas
                       </Link>
@@ -136,80 +135,61 @@ export default function Header({ categories = [] }: HeaderProps) {
 
             <Link
               href="/redaksi"
-              className="px-3.5 py-1.5 rounded-full hover:bg-stone-100 hover:text-[#7F0000] transition-colors"
+              className="hover:text-[#B91C1C] transition-colors"
             >
               Redaksi
             </Link>
             <Link
               href="/pedoman-media-siber"
-              className="px-3.5 py-1.5 rounded-full hover:bg-stone-100 hover:text-[#7F0000] transition-colors"
+              className="hover:text-[#B91C1C] transition-colors"
             >
               Pedoman Media Siber
             </Link>
             <Link
               href="/term-of-service"
-              className="px-3.5 py-1.5 rounded-full hover:bg-stone-100 hover:text-[#7F0000] transition-colors"
+              className="hover:text-[#B91C1C] transition-colors"
             >
-              Terms of Service
+              Term of Service
             </Link>
           </nav>
 
-          {/* Right Action Icons (Search, Dark Mode, Mobile Hamburger) */}
-          <div className="flex items-center gap-2">
-            {/* Desktop Search Bar or Icon */}
-            <div className="relative">
-              {isSearchOpen ? (
-                <form
-                  onSubmit={handleSearchSubmit}
-                  className="flex items-center bg-white/95 text-stone-900 rounded-full px-3 py-1 shadow-md w-56 sm:w-64"
-                >
-                  <Search className="w-4 h-4 text-stone-400 shrink-0 mr-2" />
-                  <input
-                    type="search"
-                    placeholder="Cari berita..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    autoFocus
-                    className="w-full text-xs bg-transparent border-none focus:outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setIsSearchOpen(false)}
-                    className="text-stone-400 hover:text-stone-600 ml-1"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </form>
-              ) : (
-                <button
-                  onClick={() => setIsSearchOpen(true)}
-                  aria-label="Cari Berita"
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all duration-200"
-                >
-                  <Search className="w-4 h-4" />
-                </button>
-              )}
-            </div>
+          {/* Desktop Search Bar (Permanent White Rounded-full Input Pill) */}
+          <form
+            onSubmit={handleSearchSubmit}
+            className="hidden md:flex items-center relative bg-white rounded-full px-4 py-2 border border-stone-200/90 shadow-xs w-48 sm:w-60 lg:w-72 shrink-0"
+          >
+            <input
+              type="search"
+              placeholder="Cari berita, topik, atau kata kunci..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full text-xs text-stone-800 placeholder-stone-400 bg-transparent border-none focus:outline-none pr-6"
+            />
+            <button
+              type="submit"
+              aria-label="Lakukan Pencarian"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-600 hover:text-stone-950 transition-colors"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          </form>
 
-            {/* Dark Mode Toggle */}
+          {/* Right Action Icons (Moon ThemeToggle + Hamburger Menu) */}
+          <div className="flex items-center gap-3 shrink-0 relative z-10">
+            {/* Dark Mode Moon Toggle */}
             <ThemeToggle />
 
-            {/* Admin Login shortcut */}
-            <Link
-              href="/admin/login"
-              title="Portal Redaksi / Admin"
-              className="w-9 h-9 rounded-full bg-amber-400/20 hover:bg-amber-400/30 text-amber-300 flex items-center justify-center transition-all duration-200"
-            >
-              <Shield className="w-4 h-4" />
-            </Link>
-
-            {/* Mobile Hamburger Button */}
+            {/* Mobile Hamburger / Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label="Buka navigasi mobile"
-              className="lg:hidden w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all"
+              aria-label="Buka navigasi menu"
+              className="text-white hover:text-amber-300 p-1 flex items-center justify-center transition-colors cursor-pointer focus:outline-none"
             >
-              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {isMobileMenuOpen ? (
+                <X className="w-6 h-6 stroke-[2.5]" />
+              ) : (
+                <Menu className="w-6 h-6 stroke-[2.5]" />
+              )}
             </button>
           </div>
         </div>
@@ -217,16 +197,18 @@ export default function Header({ categories = [] }: HeaderProps) {
 
       {/* Mobile Drawer */}
       {isMobileMenuOpen && (
-        <div className="lg:hidden bg-[#6B0000] border-t border-[#7F0000] px-4 py-4 space-y-3 shadow-2xl animate-in slide-in-from-top duration-200">
-          <form onSubmit={handleSearchSubmit} className="flex items-center bg-white rounded-lg px-3 py-2 text-stone-800">
-            <Search className="w-4 h-4 text-stone-400 mr-2" />
+        <div className="bg-[#550000] border-t border-[#6B0000] px-4 py-5 space-y-4 shadow-2xl animate-in slide-in-from-top duration-200 relative z-40">
+          <form onSubmit={handleSearchSubmit} className="flex items-center bg-white rounded-full px-4 py-2 text-stone-800">
             <input
               type="search"
-              placeholder="Cari berita & topik..."
+              placeholder="Cari berita, topik, atau kata kunci..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-sm bg-transparent border-none focus:outline-none"
+              className="w-full text-xs bg-transparent border-none focus:outline-none"
             />
+            <button type="submit" aria-label="Cari">
+              <Search className="w-4 h-4 text-stone-600" />
+            </button>
           </form>
 
           <div className="grid grid-cols-1 gap-1 text-sm font-medium text-white/90">
@@ -276,7 +258,15 @@ export default function Header({ categories = [] }: HeaderProps) {
                 className="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-2"
               >
                 <Shield className="w-4 h-4 text-amber-300" />
-                <span>Terms of Service</span>
+                <span>Term of Service</span>
+              </Link>
+              <Link
+                href="/admin/login"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="px-3 py-2 rounded-lg hover:bg-white/10 transition-colors flex items-center gap-2 text-amber-300 font-semibold"
+              >
+                <Shield className="w-4 h-4 text-amber-300" />
+                <span>Masuk Admin</span>
               </Link>
             </div>
           </div>

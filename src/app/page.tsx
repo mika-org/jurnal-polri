@@ -87,13 +87,13 @@ export default async function HomePage() {
       deleted_at: null,
     },
     orderBy: { urutan: "asc" },
-    take: 3,
+    take: 2,
   });
 
-  // Fallback ad array if less than 3
+  // Fallback ad array: 2 iklan sesuai desain
   const resolvedStripAds =
     homeStripAds.length > 0
-      ? homeStripAds
+      ? homeStripAds.slice(0, 2)
       : [
           {
             id: "ad-fallback-1",
@@ -104,12 +104,6 @@ export default async function HomePage() {
           {
             id: "ad-fallback-2",
             judul: "Pusat Bunga Duka Cita & Selamat Resmi Terpercaya",
-            gambar: "/images/ads/iklan-bunga.jpeg",
-            tautan: "https://wa.me/6281234567890",
-          },
-          {
-            id: "ad-fallback-3",
-            judul: "Florist Mitra Presisi - Diskon Pemesanan Kolektif",
             gambar: "/images/ads/iklan-bunga.jpeg",
             tautan: "https://wa.me/6281234567890",
           },

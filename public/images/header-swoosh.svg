@@ -1,16 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 140" fill="none" preserveAspectRatio="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 120" preserveAspectRatio="none" width="100%" height="100%">
   <defs>
-    <linearGradient id="swooshGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#F28C00" stop-opacity="0.85" />
-      <stop offset="60%" stop-color="#FFD9A8" stop-opacity="0.4" />
-      <stop offset="100%" stop-color="#7F0000" stop-opacity="0" />
+    <linearGradient id="orangeTopGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#E65100" />
+      <stop offset="25%" stop-color="#F57C00" />
+      <stop offset="55%" stop-color="#FFA726" />
+      <stop offset="85%" stop-color="#FFB74D" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#6B0000" stop-opacity="0" />
     </linearGradient>
-    <linearGradient id="subtleGrad" x1="0%" y1="50%" x2="100%" y2="50%">
-      <stop offset="0%" stop-color="#FFD9A8" stop-opacity="0.3" />
-      <stop offset="50%" stop-color="#F28C00" stop-opacity="0.15" />
-      <stop offset="100%" stop-color="#7F0000" stop-opacity="0" />
+
+    <linearGradient id="orangeMidGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F57C00" />
+      <stop offset="30%" stop-color="#FB8C00" />
+      <stop offset="60%" stop-color="#FFB74D" />
+      <stop offset="100%" stop-color="#FFE082" stop-opacity="0" />
     </linearGradient>
   </defs>
-  <path d="M-50 -20 C250 80, 500 130, 850 40 C1100 -20, 1350 20, 1500 0 L1500 -50 L-50 -50 Z" fill="url(#subtleGrad)" />
-  <path d="M-100 -30 C150 110, 420 140, 780 25 C1050 -55, 1280 45, 1520 -10 L1520 -70 L-100 -70 Z" fill="url(#swooshGrad)" />
+
+  <!-- Layer 1: Highest Orange Swoosh -->
+  <path d="M 0,22 C 200,20 400,24 620,48 C 800,68 1000,105 1250,115 C 1380,120 1480,120 1600,120 L 1600,120 L 0,120 Z" 
+        fill="url(#orangeTopGrad)" />
+
+  <!-- Layer 2: Medium Vibrant Orange Swoosh -->
+  <path d="M 0,38 C 220,36 430,42 660,68 C 840,88 1050,118 1280,120 L 0,120 Z" 
+        fill="url(#orangeMidGrad)" />
+
+  <!-- Layer 3: Solid Clean White Swoosh Directly Behind the Logo Area -->
+  <path d="M 0,50 C 240,48 450,56 680,82 C 860,102 1020,120 1180,120 L 0,120 Z" 
+        fill="#FFFFFF" />
 </svg>
