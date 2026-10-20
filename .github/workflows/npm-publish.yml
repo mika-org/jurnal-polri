@@ -69,7 +69,7 @@ jobs:
             fi
 
             echo "Managing process with $PM2_BIN on port 3012..."
-            PORT=3012 $PM2_BIN restart aurvella-florist --update-env || PORT=3012 $PM2_BIN start npm --name jurnal-polri -- start -- -p 3012 || true
+            PORT=3012 $PM2_BIN restart jurnal-polri --update-env || PORT=3012 $PM2_BIN start npm --name jurnal-polri -- start -- -p 3012 || true
             $PM2_BIN save || true
 
       - name: Calculate Duration
@@ -152,7 +152,7 @@ jobs:
             `${{ secrets.VPS_HOST }}`
 
             🌐 *Application Port:* `3012`
-            🌐 *Application Link:* `https://aurvella-florist.elevore.web.id`
+            🌐 *Application Link:* `https://jurnal-polri.elevore.web.id`
 
             🕒 *Finished:* `${{ env.FINISHED }}`
             ⏱ *Duration:* `${{ env.DURATION }}`
