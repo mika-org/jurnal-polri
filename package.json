@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:3200": "next dev -p 3200",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -24,6 +25,7 @@
     "prisma": "^6.4.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "sharp": "^0.35.5",
     "tailwind-merge": "^3.7.0",
     "zod": "^4.6.7"
   },

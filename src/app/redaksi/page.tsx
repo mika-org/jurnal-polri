@@ -44,13 +44,10 @@ export default async function RedaksiPage() {
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#1E1010] rounded-xl border border-stone-200 dark:border-stone-800 p-6 sm:p-10 shadow-sm">
+        <div className="w-full">
           <div
-            className="prose prose-stone dark:prose-invert max-w-none text-sm sm:text-base leading-relaxed space-y-4"
             dangerouslySetInnerHTML={{
-              __html:
-                page?.konten ||
-                `<h3>Dewan Pembina</h3><p>Komjen Pol (Purn) Dr. H. Bambang Sudarmono, S.H., M.M.</p><h3>Pemimpin Redaksi</h3><p>Bripka Hendra Wijaya</p>`,
+              __html: page?.konten || "",
             }}
           />
         </div>

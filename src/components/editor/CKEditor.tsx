@@ -35,7 +35,7 @@ export default function CKEditor({
   name,
   initialValue = "",
   onChange,
-  placeholder = "Tulis isi berita lengkap di sini...",
+  placeholder = "Tulis isi berita atau naskah lengkap di sini...",
 }: CKEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorInstanceRef = useRef<{
@@ -115,7 +115,18 @@ export default function CKEditor({
         editorInstanceRef.current = null;
       }
     };
-  }, [scriptLoaded, initialValue, onChange, placeholder]);
+  }, [scriptLoaded, placeholder]);
+
+  // Keep editor content in sync if initialValue changes externally
+  useEffect(() => {
+    if (editorInstanceRef.current && initialValue !== undefined) {
+      const currentData = editorInstanceRef.current.getData();
+      if (currentData !== initialValue) {
+        editorInstanceRef.current.setData(initialValue);
+        setValue(initialValue);
+      }
+    }
+  }, [initialValue]);
 
   return (
     <div className="space-y-1 relative">
@@ -131,11 +142,11 @@ export default function CKEditor({
       <input type="hidden" name={name} value={value} />
 
       {/* Editor Box */}
-      <div className="ckeditor-wrapper rounded-lg overflow-hidden border border-[#2C1414] bg-[#180C0C] focus-within:border-[#E50914] transition-colors">
+      <div className="ckeditor-wrapper rounded-lg overflow-hidden border border-stone-200 bg-white focus-within:border-[#E50914] transition-colors shadow-xs">
         {!editorReady && (
-          <div className="min-h-[260px] flex flex-col items-center justify-center gap-2 p-6 text-stone-500 bg-[#140A0A]">
+          <div className="min-h-[260px] flex flex-col items-center justify-center gap-2 p-6 text-stone-500 bg-stone-50">
             <Loader2 className="w-5 h-5 animate-spin text-red-500" />
-            <span className="text-xs">Memuat CKEditor 5...</span>
+            <span className="text-xs">Memuat Formatter Visual (CKEditor 5)...</span>
           </div>
         )}
 
@@ -150,41 +161,42 @@ export default function CKEditor({
           min-height: 260px !important;
           max-height: 550px !important;
           overflow-y: auto !important;
-          background-color: #1a0d0d !important;
-          color: #f5f5f4 !important;
+          background-color: #ffffff !important;
+          color: #1c1917 !important;
           font-family: inherit !important;
           font-size: 0.875rem !important;
           line-height: 1.625 !important;
           padding: 1rem 1.25rem !important;
         }
         .ckeditor-wrapper .ck.ck-toolbar {
-          background-color: #241111 !important;
-          border-color: #381717 !important;
+          background-color: #f8fafc !important;
+          border-color: #e2e8f0 !important;
           border-top-left-radius: 0.5rem !important;
           border-top-right-radius: 0.5rem !important;
         }
         .ckeditor-wrapper .ck.ck-button {
-          color: #d6d3d1 !important;
+          color: #475569 !important;
           cursor: pointer !important;
         }
         .ckeditor-wrapper .ck.ck-button:hover {
-          background-color: #3e1b1b !important;
-          color: #ffffff !important;
+          background-color: #f1f5f9 !important;
+          color: #0f172a !important;
         }
         .ckeditor-wrapper .ck.ck-button.ck-on {
-          background-color: #7f0000 !important;
-          color: #ffffff !important;
+          background-color: #fee2e2 !important;
+          color: #b91c1c !important;
         }
         .ckeditor-wrapper .ck.ck-dropdown__panel {
-          background-color: #241111 !important;
-          border-color: #381717 !important;
+          background-color: #ffffff !important;
+          border-color: #e2e8f0 !important;
+          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
         }
         .ckeditor-wrapper .ck.ck-list__item .ck-button {
-          color: #d6d3d1 !important;
+          color: #334155 !important;
         }
         .ckeditor-wrapper .ck.ck-list__item .ck-button:hover {
-          background-color: #3e1b1b !important;
-          color: #ffffff !important;
+          background-color: #f1f5f9 !important;
+          color: #0f172a !important;
         }
       `}</style>
     </div>

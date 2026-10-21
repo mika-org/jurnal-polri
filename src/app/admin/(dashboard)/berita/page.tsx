@@ -32,6 +32,9 @@ export default async function AdminBeritaPage() {
         penulis: {
           select: { nama_lengkap: true },
         },
+        _count: {
+          select: { komentar: { where: { deleted_at: null } } },
+        },
       },
       orderBy: { created_at: "desc" },
     }),
@@ -51,6 +54,9 @@ export default async function AdminBeritaPage() {
             },
             penulis: {
               select: { nama_lengkap: true },
+            },
+            _count: {
+              select: { komentar: { where: { deleted_at: null } } },
             },
           },
           orderBy: { deleted_at: "desc" },

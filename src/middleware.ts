@@ -16,6 +16,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Never redirect away from login page to prevent ping-pong loops
+  if (isLoginPage) {
+    return NextResponse.next();
+  }
+
   const token = request.cookies.get("jp_access_token")?.value;
   let isValid = false;
 
@@ -28,12 +33,8 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (isLoginPage && isValid) {
-    return NextResponse.redirect(new URL("/admin", request.url));
-  }
-
   // If on protected admin route and not logged in, redirect to login
-  if (!isLoginPage && !isValid) {
+  if (!isValid) {
     const loginUrl = new URL("/admin/login", request.url);
     loginUrl.searchParams.set("from", pathname);
     return NextResponse.redirect(loginUrl);

@@ -8,6 +8,9 @@ import Footer from "@/components/layout/Footer";
 import Badge from "@/components/ui/Badge";
 import BannerAd from "@/components/ads/BannerAd";
 import NewsCard from "@/components/ui/NewsCard";
+import SocialShare from "@/components/berita/SocialShare";
+import CommentSection from "@/components/berita/CommentSection";
+import { ambilKomentarArtikel } from "@/app/actions/komentar";
 import { Calendar, User, Eye, Share2, Tag as TagIcon, ArrowLeft } from "lucide-react";
 import { formatTanggalWaktu } from "@/lib/utils";
 
@@ -67,7 +70,7 @@ export default async function BeritaDetailPage({ params }: PageProps) {
     });
 
   // Fetch related data in parallel
-  const [categories, settingsRows, topAd, relatedArticles] = await Promise.all([
+  const [categories, settingsRows, topAd, relatedArticles, commentsData] = await Promise.all([
     prisma.kategori.findMany({
       where: { deleted_at: null },
       orderBy: { urutan: "asc" },
@@ -89,6 +92,7 @@ export default async function BeritaDetailPage({ params }: PageProps) {
       take: 4,
       orderBy: { diterbitkan_pada: "desc" },
     }),
+    ambilKomentarArtikel(article.id),
   ]);
 
   const settings = settingsRows.reduce<Record<string, string>>((acc, curr) => {
@@ -192,37 +196,31 @@ export default async function BeritaDetailPage({ params }: PageProps) {
                 ))}
               </div>
             )}
+
+            {/* Horizontal Social Share under Article Body */}
+            <div className="pt-6 pb-2 border-t border-stone-200 dark:border-stone-800">
+              <SocialShare title={article.judul} slug={article.slug} variant="horizontal" />
+            </div>
+
+            {/* Comment Section */}
+            <CommentSection
+              artikelId={article.id}
+              initialComments={commentsData.comments}
+              totalComments={commentsData.total}
+            />
           </article>
 
           {/* Sidebar */}
           <aside className="space-y-6">
-            <div className="bg-[#FBEFEF] dark:bg-[#1E1010] border border-red-100 dark:border-stone-800 rounded-xl p-5">
-              <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100 uppercase tracking-wider mb-2">
-                Bagikan Berita
+            <div className="bg-[#FBEFEF] dark:bg-[#1E1010] border border-red-100 dark:border-stone-800 rounded-xl p-5 shadow-xs">
+              <h3 className="text-sm font-bold text-stone-900 dark:text-stone-100 uppercase tracking-wider mb-1.5 flex items-center gap-2">
+                <Share2 className="w-4 h-4 text-[#B91C1C]" />
+                <span>Bagikan Berita</span>
               </h3>
-              <p className="text-xs text-stone-500 dark:text-stone-400 mb-4">
-                Sebarkan informasi terverifikasi ini kepada rekan dan komunitas Anda.
+              <p className="text-xs text-stone-600 dark:text-stone-400 mb-4">
+                Sebarkan informasi terverifikasi ini kepada rekan dan komunitas Anda melalui WhatsApp, Facebook, dan Instagram.
               </p>
-              <div className="grid grid-cols-2 gap-2 text-xs font-semibold">
-                <a
-                  href={`https://wa.me/?text=${encodeURIComponent(article.judul + " - Baca di: ")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </a>
-                <a
-                  href={`https://www.facebook.com/sharer/sharer.php`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-colors"
-                >
-                  <Share2 className="w-3.5 h-3.5" />
-                  <span>Facebook</span>
-                </a>
-              </div>
+              <SocialShare title={article.judul} slug={article.slug} variant="card" />
             </div>
 
             {/* Sidebar Ad (iklan-bunga.jpeg) */}

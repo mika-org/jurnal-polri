@@ -20,15 +20,15 @@ export default async function AdminIklanPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-white border border-stone-200 rounded-xl p-5 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-extrabold text-white flex items-center gap-2">
+          <h1 className="text-xl sm:text-2xl font-black text-stone-900 flex items-center gap-2">
             <span>Manajemen Banner Iklan Mitra</span>
-            <span className="text-[10px] font-bold bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full border border-amber-400/30">
+            <span className="text-[10px] font-bold bg-amber-50 text-amber-800 px-2.5 py-0.5 rounded-full border border-amber-200">
               iklan-bunga.jpeg Aktif
             </span>
           </h1>
-          <p className="text-xs text-stone-400 mt-1">
+          <p className="text-xs text-stone-500 mt-1">
             Kelola penempatan banner promosi (Sidebar, Home Strip, Atas Artikel, Footer)
           </p>
         </div>

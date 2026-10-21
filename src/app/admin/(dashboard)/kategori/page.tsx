@@ -23,11 +23,11 @@ export default async function AdminKategoriPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-extrabold text-white">
+      <div className="bg-white border border-stone-200 rounded-xl p-5 shadow-xs">
+        <h1 className="text-xl sm:text-2xl font-black text-stone-900">
           Kategori &amp; Kanal Liputan
         </h1>
-        <p className="text-xs text-stone-400 mt-1">
+        <p className="text-xs text-stone-500 mt-1">
           Kelola topik berita, slogan kanal, dan kartu navigasi cepat beranda
         </p>
       </div>

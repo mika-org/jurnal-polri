@@ -1,19 +1,10 @@
 import React from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
-import {
-  LayoutDashboard,
-  Newspaper,
-  Layers,
-  Image as ImageIcon,
-  FileText,
-  Users,
-  Settings,
-  ExternalLink,
-  Shield,
-} from "lucide-react";
+import { getCurrentUser, isSuperAdminUser } from "@/lib/auth";
+import { ExternalLink, Shield } from "lucide-react";
 import LogoutButton from "./LogoutButton";
+import AdminSidebarNav from "@/components/admin/AdminSidebarNav";
 
 export default async function AdminDashboardLayout({
   children,
@@ -23,35 +14,19 @@ export default async function AdminDashboardLayout({
   const user = await getCurrentUser();
 
   if (!user) {
-    redirect("/admin/login");
+    redirect("/api/auth/logout?redirect=/admin/login");
   }
 
+  const isSuperAdmin = isSuperAdminUser(user);
   const isWartawan =
     user.roleSlug === "wartawan" ||
     user.superGroupName.toLowerCase().includes("wartawan") ||
     user.roleSlug === "reporter";
 
-  const allNavItems = [
-    { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-    { label: "Kelola Berita", href: "/admin/berita", icon: Newspaper },
-    { label: "Kategori", href: "/admin/kategori", icon: Layers },
-    { label: "Banner Iklan", href: "/admin/iklan", icon: ImageIcon },
-    { label: "Halaman Statis", href: "/admin/halaman", icon: FileText },
-    { label: "Pengguna & Akses", href: "/admin/pengguna", icon: Users },
-    { label: "Pengaturan Portal", href: "/admin/pengaturan", icon: Settings },
-  ];
-
-  const navItems = isWartawan
-    ? [
-        { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-        { label: "Kelola Berita", href: "/admin/berita", icon: Newspaper },
-      ]
-    : allNavItems;
-
   return (
-    <div className="min-h-screen bg-[#0F0808] text-stone-100 flex flex-col md:flex-row">
+    <div className="min-h-screen bg-[#F4F5F7] text-stone-900 flex flex-col md:flex-row">
       {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-[#180C0C] border-r border-[#2C1414] flex flex-col shrink-0">
+      <aside className="w-full md:w-64 bg-[#180C0C] border-r border-[#2C1414] text-stone-300 flex flex-col shrink-0">
         {/* Brand Header */}
         <div className="h-16 border-b border-[#2C1414] px-5 flex items-center justify-between">
           <Link href="/admin" className="flex items-center gap-2.5">
@@ -88,22 +63,8 @@ export default async function AdminDashboardLayout({
           </div>
         </div>
 
-        {/* Navigation Links */}
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-medium text-stone-300 hover:text-white hover:bg-[#2A1212] transition-colors"
-              >
-                <Icon className="w-4 h-4 text-stone-400" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
+        {/* Navigation Links with Active Color Differentiation */}
+        <AdminSidebarNav isSuperAdmin={isSuperAdmin} isWartawan={isWartawan} />
 
         {/* Footer Actions */}
         <div className="p-3 border-t border-[#2C1414] space-y-1">
@@ -123,19 +84,14 @@ export default async function AdminDashboardLayout({
       </aside>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
-        <header className="h-16 border-b border-[#2C1414] bg-[#180C0C]/80 backdrop-blur px-6 flex items-center justify-between sticky top-0 z-30">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto bg-stone-50 text-stone-900">
+        <header className="h-16 border-b border-[#2C1414] bg-[#180C0C] px-6 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-2 text-xs text-stone-400">
             <span>Sistem Manajemen Konten &amp; Iklan Portal Berita</span>
           </div>
-
-          <div className="flex items-center gap-3 text-xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-stone-300">Server Terhubung: PostgreSQL</span>
-          </div>
         </header>
 
-        <main className="p-6 lg:p-8 flex-1 bg-[#120808]">
+        <main className="p-6 lg:p-8 flex-1 bg-stone-50 text-stone-900">
           {children}
         </main>
       </div>

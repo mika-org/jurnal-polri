@@ -20,11 +20,11 @@ export default async function TambahBeritaPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-extrabold text-white">
+      <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-xs">
+        <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
           Tulis Naskah Berita Baru
         </h1>
-        <p className="text-xs text-stone-400 mt-1">
+        <p className="text-xs text-stone-600 mt-1 font-medium">
           {isAdmin
             ? "Lengkapi naskah, pilih kategori liputan, dan tetapkan status publikasi langsung"
             : "Tulis naskah liputan untuk diajukan ke Admin. Setelah disubmit, naskah akan ditinjau Admin."}

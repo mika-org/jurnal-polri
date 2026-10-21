@@ -52,13 +52,13 @@ export default async function EditBeritaPage({ params }: EditBeritaPageProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-extrabold text-white">
+      <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-xs">
+        <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
           Sunting Naskah Berita
         </h1>
-        <p className="text-xs text-stone-400 mt-1">
+        <p className="text-xs text-stone-600 mt-1 font-medium">
           {isAdmin
-            ? "Perbarui konten berita, status publikasi, atau penempatan visual"
+            ? "Perbarui konten berita, status publikasi, atau tinjau komentar pembaca di panel samping"
             : "Sunting naskah liputan revisi Anda dan ajukan kembali ke Admin"}
         </p>
       </div>
@@ -69,6 +69,7 @@ export default async function EditBeritaPage({ params }: EditBeritaPageProps) {
         initialData={{
           id: article.id,
           judul: article.judul,
+          slug: article.slug,
           ringkasan: article.ringkasan,
           konten: article.konten,
           gambar_sampul: article.gambar_sampul,

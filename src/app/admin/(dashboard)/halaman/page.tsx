@@ -17,11 +17,11 @@ export default async function AdminHalamanPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl sm:text-2xl font-extrabold text-white">
+      <div className="bg-white border border-stone-200 rounded-xl p-5 shadow-xs">
+        <h1 className="text-xl sm:text-2xl font-black text-stone-900">
           Kelola Halaman Statis &amp; Regulasi
         </h1>
-        <p className="text-xs text-stone-400 mt-1">
+        <p className="text-xs text-stone-500 mt-1">
           Sunting naskah Susunan Redaksi, Pedoman Media Siber, dan Syarat Ketentuan Layanan (ToS)
         </p>
       </div>

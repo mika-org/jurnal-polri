@@ -32,8 +32,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      router.push("/admin");
-      router.refresh();
+      window.location.href = "/admin";
     } catch {
       setError("Terjadi kesalahan jaringan.");
       setIsLoading(false);
@@ -123,10 +122,6 @@ export default function AdminLoginPage() {
             )}
           </button>
         </form>
-
-        <div className="mt-8 pt-4 border-t border-stone-800/80 text-center text-[11px] text-stone-500">
-          Akun bawaan sistem: <span className="text-amber-400 font-mono">admin</span> / <span className="text-amber-400 font-mono">admin123</span>
-        </div>
       </div>
     </div>
   );
