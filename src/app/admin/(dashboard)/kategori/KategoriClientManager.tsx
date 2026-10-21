@@ -97,7 +97,7 @@ export default function KategoriClientManager({
                   <td className="py-3.5 px-4">
                     {cat.tampil_di_cepat ? (
                       <span className="bg-emerald-950 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded border border-emerald-800">
-                        YA (3 Kartu Beranda)
+                        YA (Tampil di Beranda)
                       </span>
                     ) : (
                       <span className="text-stone-500 text-[10px]">TIDAK</span>
@@ -181,7 +181,7 @@ export default function KategoriClientManager({
                   className="rounded text-[#E50914]"
                 />
                 <label htmlFor="tampil-cepat-checkbox" className="text-stone-300 cursor-pointer">
-                  Tampilkan di 3 Kartu Kategori Cepat Beranda
+                  Tampilkan di Kategori Cepat Beranda
                 </label>
               </div>
 

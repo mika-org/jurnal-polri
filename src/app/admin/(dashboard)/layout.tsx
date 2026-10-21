@@ -1,6 +1,5 @@
 import React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import {
@@ -12,7 +11,6 @@ import {
   Users,
   Settings,
   ExternalLink,
-  LogOut,
   Shield,
 } from "lucide-react";
 import LogoutButton from "./LogoutButton";
@@ -28,7 +26,12 @@ export default async function AdminDashboardLayout({
     redirect("/admin/login");
   }
 
-  const navItems = [
+  const isWartawan =
+    user.roleSlug === "wartawan" ||
+    user.superGroupName.toLowerCase().includes("wartawan") ||
+    user.roleSlug === "reporter";
+
+  const allNavItems = [
     { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { label: "Kelola Berita", href: "/admin/berita", icon: Newspaper },
     { label: "Kategori", href: "/admin/kategori", icon: Layers },
@@ -37,6 +40,13 @@ export default async function AdminDashboardLayout({
     { label: "Pengguna & Akses", href: "/admin/pengguna", icon: Users },
     { label: "Pengaturan Portal", href: "/admin/pengaturan", icon: Settings },
   ];
+
+  const navItems = isWartawan
+    ? [
+        { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+        { label: "Kelola Berita", href: "/admin/berita", icon: Newspaper },
+      ]
+    : allNavItems;
 
   return (
     <div className="min-h-screen bg-[#0F0808] text-stone-100 flex flex-col md:flex-row">

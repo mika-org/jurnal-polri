@@ -26,7 +26,7 @@ export default function Header({ categories = [] }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#680000] border-b border-[#550000] shadow-md transition-colors relative overflow-hidden select-none">
+    <header className="sticky top-0 z-50 bg-[#680000] border-b border-[#550000] shadow-md transition-colors relative select-none">
       {/* Background Decorative Multi-Layer Orange/White Swoosh */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="relative w-full h-full">
@@ -59,11 +59,11 @@ export default function Header({ categories = [] }: HeaderProps) {
             </div>
           </Link>
 
-          {/* Desktop Nav Pill (White Rounded-full with Dark Red Maroon Text) */}
-          <nav className="hidden xl:flex items-center bg-white rounded-full border border-stone-200/90 px-6 py-2 shadow-xs gap-5 text-xs lg:text-[13px] font-semibold text-[#7A0C0C] shrink-0">
+          {/* Desktop Nav Pill */}
+          <nav className="hidden xl:flex items-center bg-white rounded-full border border-stone-200/90 px-6 py-2 shadow-xs gap-5 text-xs lg:text-[13px] font-semibold text-stone-700 shrink-0">
             <Link
               href="/"
-              className="hover:text-[#B91C1C] transition-colors"
+              className="hover:text-[#7A0C0C] transition-colors"
             >
               Beranda
             </Link>
@@ -75,21 +75,21 @@ export default function Header({ categories = [] }: HeaderProps) {
               onMouseLeave={() => setIsCategoryOpen(false)}
             >
               <button
-                className="flex items-center gap-1 hover:text-[#B91C1C] transition-colors cursor-pointer"
+                className="flex items-center gap-1 hover:text-[#7A0C0C] transition-colors cursor-pointer"
                 aria-expanded={isCategoryOpen}
               >
                 <span>Kategori</span>
-                <ChevronDown className="w-3.5 h-3.5 text-[#7A0C0C]" />
+                <ChevronDown className="w-3.5 h-3.5 text-stone-500" />
               </button>
 
               {isCategoryOpen && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-stone-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="absolute top-full left-0 mt-2 w-52 bg-white rounded-xl shadow-2xl border border-stone-200 py-2 z-[100] animate-in fade-in slide-in-from-top-2 duration-150">
                   {categories.length > 0 ? (
                     categories.map((cat) => (
                       <Link
                         key={cat.id}
                         href={`/kategori/${cat.slug}`}
-                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C] transition-colors"
+                        className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
                         onClick={() => setIsCategoryOpen(false)}
                       >
                         {cat.nama}
@@ -99,31 +99,31 @@ export default function Header({ categories = [] }: HeaderProps) {
                     <>
                       <Link
                         href="/kategori/politik"
-                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
+                        className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
                       >
                         Politik
                       </Link>
                       <Link
                         href="/kategori/hukum"
-                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
+                        className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
                       >
                         Hukum
                       </Link>
                       <Link
                         href="/kategori/sosial"
-                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
+                        className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
                       >
                         Sosial
                       </Link>
                       <Link
                         href="/kategori/patroli"
-                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
+                        className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
                       >
                         Patroli
                       </Link>
                       <Link
                         href="/kategori/lalu-lintas"
-                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
+                        className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
                       >
                         Lalu Lintas
                       </Link>

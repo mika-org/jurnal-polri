@@ -2,7 +2,7 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Clock } from "lucide-react";
-import BannerAd from "@/components/ads/BannerAd";
+import AdCarousel, { AdItem } from "@/components/ads/AdCarousel";
 import Badge from "@/components/ui/Badge";
 import { formatTanggal } from "@/lib/utils";
 
@@ -17,23 +17,20 @@ export interface LatestArticle {
 
 interface LatestListProps {
   articles: LatestArticle[];
-  ad?: {
-    id?: string;
-    judul?: string;
-    gambar?: string;
-    tautan?: string | null;
-  } | null;
+  ads?: AdItem[] | null;
+  ad?: AdItem | null;
 }
 
-export default function LatestList({ articles, ad }: LatestListProps) {
+export default function LatestList({ articles, ads, ad }: LatestListProps) {
+  const resolvedAds = ads && ads.length > 0 ? ads : ad ? [ad] : [];
+
   return (
     <div className="flex flex-col gap-3 sm:gap-4 h-full">
-      {/* Sidebar Banner Ad (Using iklan-bunga.jpeg) */}
-      <BannerAd
-        judul={ad?.judul || "Toko Bunga Sejahtera - Karangan Bunga & Papan Ucapan"}
-        gambar={ad?.gambar || "/images/ads/iklan-bunga.jpeg"}
-        tautan={ad?.tautan || "https://wa.me/6281234567890"}
+      {/* Top Right Corner Banner Ad (Can slide if multiple) */}
+      <AdCarousel
+        ads={resolvedAds}
         posisi="SIDEBAR"
+        autoSlideInterval={4500}
       />
 
       {/* Latest News Card Container */}

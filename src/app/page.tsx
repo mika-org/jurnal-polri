@@ -10,90 +10,114 @@ import AdCta from "@/components/home/AdCta";
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  // 1. Fetch categories
-  const categories = await prisma.kategori.findMany({
-    where: { deleted_at: null },
-    orderBy: { urutan: "asc" },
-  });
+  // Fetch all home data concurrently with Promise.all to avoid connection bottleneck
+  const [
+    categories,
+    headlineArticles,
+    latestArticles,
+    featuredArticles,
+    rawQuickCategories,
+    sidebarAds,
+    homeStripAds,
+    settingsRows,
+  ] = await Promise.all([
+    // 1. Fetch categories for navigation & footer
+    prisma.kategori.findMany({
+      where: { deleted_at: null },
+      orderBy: { urutan: "asc" },
+    }),
 
-  // 2. Fetch headline articles for hero slider
-  const headlineArticles = await prisma.artikel.findMany({
-    where: {
-      status: "PUBLISHED",
-      is_draft: false,
-      adalah_utama: true,
-      deleted_at: null,
-    },
-    include: {
-      kategori: true,
-    },
-    orderBy: { diterbitkan_pada: "desc" },
-    take: 5,
-  });
+    // 2. Fetch headline articles for hero slider
+    prisma.artikel.findMany({
+      where: {
+        status: "PUBLISHED",
+        is_draft: false,
+        adalah_utama: true,
+        deleted_at: null,
+      },
+      include: { kategori: true },
+      orderBy: { diterbitkan_pada: "desc" },
+      take: 5,
+    }),
 
-  // 3. Fetch latest articles for sidebar list
-  const latestArticles = await prisma.artikel.findMany({
-    where: {
-      status: "PUBLISHED",
-      is_draft: false,
-      deleted_at: null,
-    },
-    include: {
-      kategori: true,
-    },
-    orderBy: { diterbitkan_pada: "desc" },
-    take: 6,
-  });
+    // 3. Fetch latest articles for sidebar list
+    prisma.artikel.findMany({
+      where: {
+        status: "PUBLISHED",
+        is_draft: false,
+        deleted_at: null,
+      },
+      include: { kategori: true },
+      orderBy: { diterbitkan_pada: "desc" },
+      take: 6,
+    }),
 
-  // 4. Fetch featured articles for grid
-  const featuredArticles = await prisma.artikel.findMany({
-    where: {
-      status: "PUBLISHED",
-      is_draft: false,
-      adalah_pilihan: true,
-      deleted_at: null,
-    },
-    include: {
-      kategori: true,
-    },
-    orderBy: { diterbitkan_pada: "desc" },
-    take: 8,
-  });
+    // 4. Fetch featured articles for slider
+    prisma.artikel.findMany({
+      where: {
+        status: "PUBLISHED",
+        is_draft: false,
+        adalah_pilihan: true,
+        deleted_at: null,
+      },
+      include: { kategori: true },
+      orderBy: { diterbitkan_pada: "desc" },
+      take: 12,
+    }),
 
-  // 5. Fetch quick categories (Politik, Hukum, Sosial)
-  const quickCategories = await prisma.kategori.findMany({
-    where: {
-      tampil_di_cepat: true,
-      deleted_at: null,
-    },
-    orderBy: { urutan: "asc" },
-    take: 3,
-  });
+    // 5. Fetch quick categories (No take: 3 limit so newly added/toggled categories always appear!)
+    prisma.kategori.findMany({
+      where: {
+        tampil_di_cepat: true,
+        deleted_at: null,
+      },
+      orderBy: { urutan: "asc" },
+    }),
 
-  // 6. Fetch ads (including iklan-bunga.jpeg)
-  const sidebarAd = await prisma.iklan.findFirst({
-    where: {
-      posisi: "SIDEBAR",
-      aktif: true,
-      deleted_at: null,
-    },
-    orderBy: { urutan: "asc" },
-  });
+    // 6. Fetch top right sidebar ads (fetch all so it can auto-slide if multiple)
+    prisma.iklan.findMany({
+      where: {
+        posisi: "SIDEBAR",
+        aktif: true,
+        deleted_at: null,
+      },
+      orderBy: { urutan: "asc" },
+    }),
 
-  const homeStripAds = await prisma.iklan.findMany({
-    where: {
-      posisi: "HOME_STRIP",
-      aktif: true,
-      deleted_at: null,
-    },
-    orderBy: { urutan: "asc" },
-    take: 2,
-  });
+    // 7. Fetch bottom ads (HOME_STRIP and FOOTER for auto-sliding)
+    prisma.iklan.findMany({
+      where: {
+        posisi: { in: ["HOME_STRIP", "FOOTER"] },
+        aktif: true,
+        deleted_at: null,
+      },
+      orderBy: { urutan: "asc" },
+    }),
 
-  // Fallback ad array: 2 iklan sesuai desain
+    // 8. Fetch portal settings
+    prisma.pengaturan.findMany(),
+  ]);
+
+  // Fallback quick categories if none explicitly marked
+  const quickCategories =
+    rawQuickCategories.length > 0 ? rawQuickCategories : categories.slice(0, 3);
+
+  // Fallback ads if none in database
+  const resolvedSidebarAds =
+    sidebarAds.length > 0
+      ? sidebarAds
+      : [
+          {
+            id: "ad-sidebar-default",
+            judul: "Toko Bunga Sejahtera - Karangan Bunga & Papan Ucapan",
+            gambar: "/images/ads/iklan-bunga.jpeg",
+            tautan: "https://wa.me/6281234567890",
+          },
+        ];
+
   const resolvedStripAds =
     homeStripAds.length > 0
-      ? homeStripAds.slice(0, 2)
+      ? homeStripAds
       : [
           {
             id: "ad-fallback-1",
@@ -109,8 +133,6 @@ export default async function HomePage() {
           },
         ];
 
-  // 7. Fetch settings
-  const settingsRows = await prisma.pengaturan.findMany();
   const settings = settingsRows.reduce<Record<string, string>>((acc, curr) => {
     acc[curr.kunci] = curr.nilai;
     return acc;
@@ -137,11 +159,11 @@ export default async function HomePage() {
               }))}
             />
 
-            {/* KATEGORI CEPAT (3 CARDS) */}
+            {/* KATEGORI CEPAT (Tampil semua yang diaktifkan) */}
             <QuickCategories categories={quickCategories} />
           </div>
 
-          {/* Kolom Kanan: Banner Iklan + Berita Terbaru */}
+          {/* Kolom Kanan: Banner Iklan (Bisa Slide Otomatis jika Banyak) + Berita Terbaru */}
           <LatestList
             articles={latestArticles.map((a) => ({
               id: a.id,
@@ -151,20 +173,11 @@ export default async function HomePage() {
               kategoriNama: a.kategori.nama,
               diterbitkan_pada: a.diterbitkan_pada,
             }))}
-            ad={
-              sidebarAd
-                ? {
-                    id: sidebarAd.id,
-                    judul: sidebarAd.judul,
-                    gambar: sidebarAd.gambar,
-                    tautan: sidebarAd.tautan,
-                  }
-                : null
-            }
+            ads={resolvedSidebarAds}
           />
         </section>
 
-        {/* BERITA PILIHAN (4 KOLOM) */}
+        {/* BERITA PILIHAN (Slide ke Kanan) */}
         <FeaturedGrid
           articles={featuredArticles.map((a) => ({
             id: a.id,
@@ -179,7 +192,7 @@ export default async function HomePage() {
           }))}
         />
 
-        {/* CTA IKLAN (1/4 CTA + 3/4 IKLAN BANNER DENGAN IKLAN-BUNGA.JPEG) */}
+        {/* CTA IKLAN (Bisa Slide Otomatis jika Banyak) */}
         <AdCta ads={resolvedStripAds} />
       </main>
 

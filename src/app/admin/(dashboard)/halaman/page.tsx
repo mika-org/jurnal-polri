@@ -1,10 +1,16 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser, isWartawanUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import HalamanClientManager from "./HalamanClientManager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminHalamanPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+  if (isWartawanUser(user)) redirect("/admin/berita");
+
   const pages = await prisma.halaman.findMany({
     orderBy: { slug: "asc" },
   });

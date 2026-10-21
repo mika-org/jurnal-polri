@@ -1,10 +1,16 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser, isWartawanUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import PengaturanClientForm from "./PengaturanClientForm";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPengaturanPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+  if (isWartawanUser(user)) redirect("/admin/berita");
+
   const settingsRows = await prisma.pengaturan.findMany();
   const settings = settingsRows.reduce<Record<string, string>>((acc, curr) => {
     acc[curr.kunci] = curr.nilai;

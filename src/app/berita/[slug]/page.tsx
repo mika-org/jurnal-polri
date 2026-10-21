@@ -56,43 +56,45 @@ export default async function BeritaDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  // Increment views asynchronously
-  await prisma.artikel.update({
-    where: { id: article.id },
-    data: { dilihat: { increment: 1 } },
-  });
+  // Increment views safely without blocking if connection busy
+  prisma.artikel
+    .update({
+      where: { id: article.id },
+      data: { dilihat: { increment: 1 } },
+    })
+    .catch((err) => {
+      console.warn("Failed to increment views:", err.message);
+    });
 
-  // Fetch categories & settings for header/footer
-  const categories = await prisma.kategori.findMany({
-    where: { deleted_at: null },
-    orderBy: { urutan: "asc" },
-  });
+  // Fetch related data in parallel
+  const [categories, settingsRows, topAd, relatedArticles] = await Promise.all([
+    prisma.kategori.findMany({
+      where: { deleted_at: null },
+      orderBy: { urutan: "asc" },
+    }),
+    prisma.pengaturan.findMany(),
+    prisma.iklan.findFirst({
+      where: { posisi: "ARTICLE_TOP", aktif: true, deleted_at: null },
+      orderBy: { urutan: "asc" },
+    }),
+    prisma.artikel.findMany({
+      where: {
+        kategori_id: article.kategori_id,
+        id: { not: article.id },
+        status: "PUBLISHED",
+        is_draft: false,
+        deleted_at: null,
+      },
+      include: { kategori: true },
+      take: 4,
+      orderBy: { diterbitkan_pada: "desc" },
+    }),
+  ]);
 
-  const settingsRows = await prisma.pengaturan.findMany();
   const settings = settingsRows.reduce<Record<string, string>>((acc, curr) => {
     acc[curr.kunci] = curr.nilai;
     return acc;
   }, {});
-
-  // Fetch Article Top Ad (using iklan-bunga.jpeg)
-  const topAd = await prisma.iklan.findFirst({
-    where: { posisi: "ARTICLE_TOP", aktif: true, deleted_at: null },
-    orderBy: { urutan: "asc" },
-  });
-
-  // Fetch related articles (same category, different id)
-  const relatedArticles = await prisma.artikel.findMany({
-    where: {
-      kategori_id: article.kategori_id,
-      id: { not: article.id },
-      status: "PUBLISHED",
-      is_draft: false,
-      deleted_at: null,
-    },
-    include: { kategori: true },
-    take: 4,
-    orderBy: { diterbitkan_pada: "desc" },
-  });
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-[#120808] text-stone-900 dark:text-stone-100">

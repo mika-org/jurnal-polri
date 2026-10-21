@@ -55,3 +55,23 @@ export async function getCurrentUser(): Promise<{
     permissions,
   };
 }
+
+export function isWartawanUser(
+  user: { roleSlug: string; superGroupName: string } | null | undefined
+): boolean {
+  if (!user) return false;
+  return (
+    user.roleSlug === "wartawan" ||
+    user.roleSlug === "reporter" ||
+    user.superGroupName.toLowerCase().includes("wartawan")
+  );
+}
+
+export function isSuperAdminUser(
+  user: { roleSlug: string; superGroupName: string } | null | undefined
+): boolean {
+  if (!user) return false;
+  const sg = user.superGroupName.toLowerCase();
+  const r = user.roleSlug.toLowerCase();
+  return sg.includes("super admin") || r === "owner" || r === "super-admin" || r === "admin";
+}

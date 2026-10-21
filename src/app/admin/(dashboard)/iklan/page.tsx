@@ -2,11 +2,17 @@ import React from "react";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { PlusCircle, ExternalLink, Image as ImageIcon, Sparkles } from "lucide-react";
+import { getCurrentUser, isWartawanUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import IklanClientManager from "./IklanClientManager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminIklanPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+  if (isWartawanUser(user)) redirect("/admin/berita");
+
   const ads = await prisma.iklan.findMany({
     where: { deleted_at: null },
     orderBy: [{ posisi: "asc" }, { urutan: "asc" }],

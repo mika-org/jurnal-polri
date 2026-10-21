@@ -4,8 +4,9 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, Save, Upload, Loader2, Sparkles } from "lucide-react";
+import { ArrowLeft, Save, Upload, Loader2 } from "lucide-react";
 import { simpanArtikel } from "@/app/actions/berita";
+import CKEditor from "@/components/editor/CKEditor";
 
 interface CategoryOption {
   id: string;
@@ -26,9 +27,14 @@ interface ArticleFormProps {
     tags: string;
   };
   categories: CategoryOption[];
+  isAdmin?: boolean;
 }
 
-export default function ArticleForm({ initialData, categories }: ArticleFormProps) {
+export default function ArticleForm({
+  initialData,
+  categories,
+  isAdmin = false,
+}: ArticleFormProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [coverImage, setCoverImage] = useState(
@@ -73,8 +79,9 @@ export default function ArticleForm({ initialData, categories }: ArticleFormProp
       await simpanArtikel(formData);
       router.push("/admin/berita");
       router.refresh();
-    } catch (err) {
-      alert("Gagal menyimpan artikel");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Gagal menyimpan artikel";
+      alert(msg);
       setLoading(false);
     }
   };
@@ -100,7 +107,7 @@ export default function ArticleForm({ initialData, categories }: ArticleFormProp
           ) : (
             <Save className="w-4 h-4" />
           )}
-          <span>Simpan Artikel</span>
+          <span>{isAdmin ? "Simpan & Publikasikan Berita" : "Kirim & Ajukan Naskah"}</span>
         </button>
       </div>
 
@@ -139,15 +146,12 @@ export default function ArticleForm({ initialData, categories }: ArticleFormProp
 
           <div>
             <label className="block text-xs font-semibold text-stone-300 uppercase tracking-wider mb-1.5">
-              Isi Konten Berita (Mendukung Format HTML)
+              Isi Konten Berita (CKEditor 5)
             </label>
-            <textarea
+            <CKEditor
               name="konten"
-              required
-              rows={12}
-              defaultValue={initialData?.konten}
-              placeholder="Tulis narasi berita lengkap di sini. Gunakan tag <p>, <h3>, <strong> untuk format..."
-              className="w-full px-4 py-2.5 bg-[#180C0C] border border-[#2C1414] rounded-lg text-sm text-white font-sans placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-[#E50914]"
+              initialValue={initialData?.konten || ""}
+              placeholder="Tulis narasi berita lengkap di sini dengan format naskah berita..."
             />
           </div>
 
@@ -188,40 +192,66 @@ export default function ArticleForm({ initialData, categories }: ArticleFormProp
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs text-stone-400 mb-1">Status Naskah</label>
-              <select
-                name="status"
-                defaultValue={initialData?.status || "PUBLISHED"}
-                className="w-full px-3 py-2 bg-[#120808] border border-[#2C1414] rounded-lg text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#E50914]"
-              >
-                <option value="PUBLISHED">PUBLISHED (Terbitkan)</option>
-                <option value="DRAFT">DRAFT (Simpan Draf)</option>
-                <option value="ARCHIVED">ARCHIVED (Arsip)</option>
-              </select>
-            </div>
+            {isAdmin ? (
+              <>
+                <div>
+                  <label className="block text-xs text-stone-400 mb-1">Status Publikasi</label>
+                  <select
+                    name="status"
+                    defaultValue={initialData?.status || "PUBLISHED"}
+                    className="w-full px-3 py-2 bg-[#120808] border border-[#2C1414] rounded-lg text-xs text-white focus:outline-none focus:ring-2 focus:ring-[#E50914]"
+                  >
+                    <option value="PUBLISHED">PUBLISHED (Tayangkan di Portal)</option>
+                    <option value="DRAFT">DRAFT (Simpan Konsep)</option>
+                    <option value="ARCHIVED">ARCHIVED (Diarsipkan)</option>
+                  </select>
+                </div>
 
-            <div className="pt-2 border-t border-[#2C1414] space-y-2 text-xs">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="adalah_utama"
-                  defaultChecked={initialData?.adalah_utama}
-                  className="rounded border-[#2C1414] text-[#E50914] focus:ring-[#E50914]"
-                />
-                <span className="text-stone-300">Tampilkan di Hero Slider (Utama)</span>
-              </label>
+                <div className="pt-2 border-t border-[#2C1414] space-y-2 text-xs">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="adalah_utama"
+                      defaultChecked={initialData?.adalah_utama}
+                      className="rounded border-[#2C1414] text-[#E50914] focus:ring-[#E50914]"
+                    />
+                    <span className="text-stone-300">Tampilkan di Hero Slider (Headline)</span>
+                  </label>
 
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="adalah_pilihan"
-                  defaultChecked={initialData?.adalah_pilihan}
-                  className="rounded border-[#2C1414] text-[#E50914] focus:ring-[#E50914]"
-                />
-                <span className="text-stone-300">Tampilkan di Berita Pilihan</span>
-              </label>
-            </div>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="adalah_pilihan"
+                      defaultChecked={initialData?.adalah_pilihan}
+                      className="rounded border-[#2C1414] text-[#E50914] focus:ring-[#E50914]"
+                    />
+                    <span className="text-stone-300">Tampilkan di Berita Pilihan</span>
+                  </label>
+
+                  <label className="flex items-center gap-2 cursor-pointer pt-1 border-t border-[#2C1414]/60">
+                    <input
+                      type="checkbox"
+                      name="buka_kunci_penulis"
+                      defaultChecked={false}
+                      className="rounded border-[#2C1414] text-emerald-500 focus:ring-emerald-500"
+                    />
+                    <span className="text-emerald-400 font-medium">
+                      Buka Kunci Edit (Izinkan Penulis Mengedit Ulang)
+                    </span>
+                  </label>
+                </div>
+              </>
+            ) : (
+              <div className="bg-[#201010] border border-amber-900/60 rounded-xl p-3.5 space-y-2">
+                <div className="flex items-center gap-1.5 text-amber-400 font-semibold text-xs">
+                  <span>Status: Draf / Pengajuan ke Admin</span>
+                </div>
+                <p className="text-[11px] text-stone-400 leading-relaxed">
+                  Naskah yang Anda kirim akan ditinjau oleh Super Admin. Setelah disubmit, naskah otomatis terkunci dan hanya Admin yang berwenang menerbitkan atau membuka kunci edit kembali.
+                </p>
+                <input type="hidden" name="status" value="DRAFT" />
+              </div>
+            )}
           </div>
 
           {/* Cover Image Upload & Preview */}

@@ -27,6 +27,7 @@ export async function simpanKategori(formData: FormData) {
     });
   }
 
+  revalidatePath("/", "layout");
   revalidatePath("/");
   revalidatePath("/admin/kategori");
   return { success: true };
@@ -38,6 +39,7 @@ export async function hapusKategori(id: string) {
 
   await prisma.kategori.delete({ where: { id } });
 
+  revalidatePath("/", "layout");
   revalidatePath("/");
   revalidatePath("/admin/kategori");
   return { success: true };

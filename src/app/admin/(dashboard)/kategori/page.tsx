@@ -1,10 +1,16 @@
 import React from "react";
 import { prisma } from "@/lib/prisma";
+import { getCurrentUser, isWartawanUser } from "@/lib/auth";
+import { redirect } from "next/navigation";
 import KategoriClientManager from "./KategoriClientManager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminKategoriPage() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/admin/login");
+  if (isWartawanUser(user)) redirect("/admin/berita");
+
   const categories = await prisma.kategori.findMany({
     where: { deleted_at: null },
     include: {
