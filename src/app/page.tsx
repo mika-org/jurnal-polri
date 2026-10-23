@@ -98,9 +98,9 @@ export default async function HomePage() {
     prisma.pengaturan.findMany(),
   ]);
 
-  // Fallback quick categories if none explicitly marked
+  // Fallback quick categories if none explicitly marked (pass all so slider can activate if > 3)
   const quickCategories =
-    rawQuickCategories.length > 0 ? rawQuickCategories : categories.slice(0, 3);
+    rawQuickCategories.length > 0 ? rawQuickCategories : categories;
 
   // Fallback ads if none in database
   const resolvedSidebarAds =

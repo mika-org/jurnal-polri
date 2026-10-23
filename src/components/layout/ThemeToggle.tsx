@@ -40,9 +40,9 @@ export default function ThemeToggle() {
       className="text-white hover:text-amber-300 transition-colors p-1 flex items-center justify-center cursor-pointer focus:outline-none"
     >
       {isDark ? (
-        <Sun className="w-5 h-5 text-amber-300" />
+        <Sun className="w-5 h-5 text-amber-300 stroke-[2]" />
       ) : (
-        <Moon className="w-5 h-5 fill-white text-white" />
+        <Moon className="w-5 h-5 text-white stroke-[2]" />
       )}
     </button>
   );

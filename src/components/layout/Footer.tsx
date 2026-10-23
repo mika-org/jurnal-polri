@@ -28,13 +28,15 @@ export default function Footer({ categories = [], settings = {} }: FooterProps) 
           {/* Column 1: Brand & About */}
           <div className="space-y-4">
             <Link href="/" className="inline-block group focus:outline-none" aria-label="Beranda Jurnal Polisi">
-              <div className="relative h-[62px] sm:h-[68px] aspect-[1024/341] rounded-lg overflow-hidden shadow-md border border-white/15 group-hover:border-amber-400/50 transition-colors">
-                <Image
-                  src="/images/logo-banner.webp"
-                  alt="Jurnal Polisi - Media Mitra Polri & TNI"
-                  fill
-                  className="object-contain object-left"
-                />
+              <div className="bg-white/95 hover:bg-white rounded-xl px-3.5 py-2 shadow-sm border border-white/20 transition-all inline-flex items-center">
+                <div className="relative h-[48px] sm:h-[54px] aspect-[329/92]">
+                  <Image
+                    src="/images/logo-hd.webp"
+                    alt="Jurnal Polisi - Media Mitra Polri & TNI"
+                    fill
+                    className="object-contain object-left"
+                  />
+                </div>
               </div>
             </Link>
             <p className="text-xs text-white/80 leading-relaxed">

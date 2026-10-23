@@ -1,30 +1,33 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 120" preserveAspectRatio="none" width="100%" height="100%">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 110" preserveAspectRatio="none" width="100%" height="100%">
   <defs>
-    <linearGradient id="orangeTopGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#E65100" />
-      <stop offset="25%" stop-color="#F57C00" />
-      <stop offset="55%" stop-color="#FFA726" />
-      <stop offset="85%" stop-color="#FFB74D" stop-opacity="0.9" />
-      <stop offset="100%" stop-color="#6B0000" stop-opacity="0" />
+      <stop offset="30%" stop-color="#F57C00" />
+      <stop offset="65%" stop-color="#FB8C00" />
+      <stop offset="90%" stop-color="#FFA726" />
+      <stop offset="100%" stop-color="#CE5403" />
     </linearGradient>
 
-    <linearGradient id="orangeMidGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#F57C00" />
-      <stop offset="30%" stop-color="#FB8C00" />
-      <stop offset="60%" stop-color="#FFB74D" />
-      <stop offset="100%" stop-color="#FFE082" stop-opacity="0" />
+    <linearGradient id="peachGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FFA726" />
+      <stop offset="40%" stop-color="#FFB74D" />
+      <stop offset="80%" stop-color="#FEC57E" />
+      <stop offset="100%" stop-color="#FFD180" />
     </linearGradient>
   </defs>
 
-  <!-- Layer 1: Highest Orange Swoosh -->
-  <path d="M 0,22 C 200,20 400,24 620,48 C 800,68 1000,105 1250,115 C 1380,120 1480,120 1600,120 L 1600,120 L 0,120 Z" 
-        fill="url(#orangeTopGrad)" />
+  <!-- Base Maroon Background -->
+  <rect width="1600" height="110" fill="#7C0106" />
 
-  <!-- Layer 2: Medium Vibrant Orange Swoosh -->
-  <path d="M 0,38 C 220,36 430,42 660,68 C 840,88 1050,118 1280,120 L 0,120 Z" 
-        fill="url(#orangeMidGrad)" />
+  <!-- Layer 1: Vibrant Orange Wave -->
+  <path d="M 0,68 C 120,38 280,18 450,20 C 660,22 860,52 1060,110 L 0,110 Z" 
+        fill="url(#orangeGrad)" />
 
-  <!-- Layer 3: Subtle Clean White Swoosh Along the Bottom -->
-  <path d="M 0,96 C 260,94 520,99 780,109 C 980,116 1140,120 1280,120 L 0,120 Z" 
+  <!-- Layer 2: Warm Peach Accent Ribbon -->
+  <path d="M 0,86 C 130,54 290,36 460,38 C 660,40 840,70 1010,110 L 0,110 Z" 
+        fill="url(#peachGrad)" />
+
+  <!-- Layer 3: Clean White Wave -->
+  <path d="M 0,105 C 40,96 110,76 220,70 C 370,62 540,64 710,72 C 810,78 880,94 940,110 L 0,110 Z" 
         fill="#FFFFFF" />
 </svg>

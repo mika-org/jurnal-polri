@@ -37,7 +37,7 @@ export default function Header({ categories = [] }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#680000] border-b border-[#550000] shadow-md transition-colors relative select-none">
+    <header className="sticky top-0 z-50 bg-[#7C0106] border-b border-[#680000] shadow-md transition-colors relative select-none">
       {/* Background Decorative Multi-Layer Orange/White Swoosh */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="relative w-full h-full">
@@ -52,16 +52,16 @@ export default function Header({ categories = [] }: HeaderProps) {
       </div>
 
       <div className="relative max-w-[1340px] mx-auto px-3 sm:px-5 lg:px-7">
-        <div className="flex items-center justify-between h-20 gap-3">
-          {/* Logo Area (Official Banner: Badge, Jurnal, Media Mitra, Polisi, Motto) */}
+        <div className="flex items-center justify-between h-24 gap-4">
+          {/* Logo Area (Official Transparent Logo: Badge, Jurnal, Media Mitra, Polisi, Motto) */}
           <Link
             href="/"
             className="relative z-10 flex items-center shrink-0 py-1 focus:outline-none group"
             aria-label="Beranda Jurnal Polisi"
           >
-            <div className="relative h-[56px] sm:h-[62px] lg:h-[66px] aspect-[1024/341] rounded-lg overflow-hidden shadow-sm group-hover:opacity-95 transition-all">
+            <div className="relative h-[62px] sm:h-[70px] lg:h-[76px] aspect-[329/92] group-hover:scale-[1.01] transition-transform">
               <Image
-                src="/images/logo-banner.webp"
+                src="/images/logo-hd.webp"
                 alt="Jurnal Polisi - Media Mitra Polri & TNI"
                 fill
                 priority
@@ -70,11 +70,11 @@ export default function Header({ categories = [] }: HeaderProps) {
             </div>
           </Link>
 
-          {/* Desktop Nav Pill */}
-          <nav className="hidden xl:flex items-center bg-white rounded-full border border-stone-200/90 px-6 py-2 shadow-xs gap-5 text-xs lg:text-[13px] font-semibold text-stone-700 shrink-0">
+          {/* Desktop Nav Pill (White Rounded-full with Vibrant Red Border & Red Text) */}
+          <nav className="hidden lg:flex items-center bg-white rounded-full border-2 border-red-600 px-6 py-2.5 shadow-sm gap-5 text-xs lg:text-[13px] font-bold text-red-600 shrink-0">
             <Link
               href="/"
-              className="hover:text-[#7A0C0C] transition-colors"
+              className="hover:text-red-800 transition-colors"
             >
               Beranda
             </Link>
@@ -89,22 +89,22 @@ export default function Header({ categories = [] }: HeaderProps) {
               <button
                 type="button"
                 onClick={() => setIsCategoryOpen((prev) => !prev)}
-                className="flex items-center gap-1 hover:text-[#7A0C0C] transition-colors cursor-pointer select-none"
+                className="flex items-center gap-1 hover:text-red-800 transition-colors cursor-pointer select-none font-bold"
                 aria-expanded={isCategoryOpen}
               >
                 <span>Kategori</span>
-                <ChevronDown className={`w-3.5 h-3.5 text-stone-500 transition-transform duration-200 ${isCategoryOpen ? "rotate-180 text-[#7A0C0C]" : ""}`} />
+                <ChevronDown className={`w-3.5 h-3.5 text-red-600 transition-transform duration-200 ${isCategoryOpen ? "rotate-180 text-red-800" : ""}`} />
               </button>
 
               {isCategoryOpen && (
                 <div className="absolute top-full left-0 pt-2 w-52 z-[100] animate-in fade-in slide-in-from-top-1 duration-150">
-                  <div className="bg-white rounded-xl shadow-2xl border border-stone-200 py-2">
+                  <div className="bg-white rounded-xl shadow-2xl border border-red-100 py-2">
                     {categories.length > 0 ? (
                       categories.map((cat) => (
                         <Link
                           key={cat.id}
                           href={`/kategori/${cat.slug}`}
-                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-red-50 hover:text-red-700 transition-colors"
                           onClick={() => setIsCategoryOpen(false)}
                         >
                           {cat.nama}
@@ -114,35 +114,35 @@ export default function Header({ categories = [] }: HeaderProps) {
                       <>
                         <Link
                           href="/kategori/politik"
-                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-red-50 hover:text-red-700 transition-colors"
                           onClick={() => setIsCategoryOpen(false)}
                         >
                           Politik
                         </Link>
                         <Link
                           href="/kategori/hukum"
-                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-red-50 hover:text-red-700 transition-colors"
                           onClick={() => setIsCategoryOpen(false)}
                         >
                           Hukum
                         </Link>
                         <Link
                           href="/kategori/sosial"
-                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-red-50 hover:text-red-700 transition-colors"
                           onClick={() => setIsCategoryOpen(false)}
                         >
                           Sosial
                         </Link>
                         <Link
                           href="/kategori/patroli"
-                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-red-50 hover:text-red-700 transition-colors"
                           onClick={() => setIsCategoryOpen(false)}
                         >
                           Patroli
                         </Link>
                         <Link
                           href="/kategori/lalu-lintas"
-                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-red-50 hover:text-red-700 transition-colors"
                           onClick={() => setIsCategoryOpen(false)}
                         >
                           Lalu Lintas
@@ -156,19 +156,19 @@ export default function Header({ categories = [] }: HeaderProps) {
 
             <Link
               href="/redaksi"
-              className="hover:text-[#B91C1C] transition-colors"
+              className="hover:text-red-800 transition-colors"
             >
               Redaksi
             </Link>
             <Link
               href="/pedoman-media-siber"
-              className="hover:text-[#B91C1C] transition-colors"
+              className="hover:text-red-800 transition-colors"
             >
               Pedoman Media Siber
             </Link>
             <Link
               href="/term-of-service"
-              className="hover:text-[#B91C1C] transition-colors"
+              className="hover:text-red-800 transition-colors"
             >
               Term of Service
             </Link>
@@ -177,7 +177,7 @@ export default function Header({ categories = [] }: HeaderProps) {
           {/* Desktop Search Bar (Permanent White Rounded-full Input Pill) */}
           <form
             onSubmit={handleSearchSubmit}
-            className="hidden md:flex items-center relative bg-white rounded-full px-4 py-2 border border-stone-200/90 shadow-xs w-48 sm:w-60 lg:w-72 shrink-0"
+            className="hidden md:flex items-center relative bg-white rounded-full px-4 py-2.5 border border-transparent shadow-xs w-48 sm:w-60 lg:w-72 shrink-0 focus-within:border-red-600"
           >
             <input
               type="search"
@@ -189,9 +189,9 @@ export default function Header({ categories = [] }: HeaderProps) {
             <button
               type="submit"
               aria-label="Lakukan Pencarian"
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-600 hover:text-stone-950 transition-colors"
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-red-600 hover:text-red-800 transition-colors"
             >
-              <Search className="w-4 h-4" />
+              <Search className="w-4 h-4 stroke-[2.2]" />
             </button>
           </form>
 
