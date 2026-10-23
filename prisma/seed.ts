@@ -156,14 +156,26 @@ async function main() {
 
   console.log("✓ Peran dan hak akses berhasil dibuat");
 
-  // 5. Buat Pengguna Utama (Admin & Editor)
-  const passwordHashAdmin = await bcrypt.hash("admin123", 12);
+  // 5. Buat Pengguna Utama (Super Admin & Editor)
+  const passwordHashAgung = await bcrypt.hash("admin123", 12);
   const userAdmin = await prisma.pengguna.create({
     data: {
-      nama_pengguna: "admin",
-      nama_lengkap: "Administrator Super",
-      email: "admin@jurnalpolisi.id",
-      kata_sandi: passwordHashAdmin,
+      nama_pengguna: "agung",
+      nama_lengkap: "Agung",
+      email: "agung@gmail.com",
+      kata_sandi: passwordHashAgung,
+      aktif: true,
+      peran_id: roleOwner.id,
+    },
+  });
+
+  const passwordHashSuperAdmin = await bcrypt.hash("admin123", 12);
+  await prisma.pengguna.create({
+    data: {
+      nama_pengguna: "superadmin",
+      nama_lengkap: "Super Admin Jurnal Polisi",
+      email: "superadmin@jurnalpolisi.id",
+      kata_sandi: passwordHashSuperAdmin,
       aktif: true,
       peran_id: roleOwner.id,
     },

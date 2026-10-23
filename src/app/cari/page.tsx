@@ -13,45 +13,42 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const { q } = await searchParams;
   const query = q?.trim() || "";
 
-  let articles: any[] = [];
-  if (query) {
-    articles = await prisma.artikel.findMany({
-      where: {
-        status: "PUBLISHED",
-        is_draft: false,
-        deleted_at: null,
-        OR: [
-          { judul: { contains: query, mode: "insensitive" } },
-          { ringkasan: { contains: query, mode: "insensitive" } },
-          { konten: { contains: query, mode: "insensitive" } },
-          {
-            artikel_tag: {
-              some: {
-                tag: {
-                  nama: { contains: query, mode: "insensitive" },
+  const articles = query
+    ? await prisma.artikel.findMany({
+        where: {
+          status: "PUBLISHED",
+          is_draft: false,
+          deleted_at: null,
+          OR: [
+            { judul: { contains: query, mode: "insensitive" } },
+            { ringkasan: { contains: query, mode: "insensitive" } },
+            { konten: { contains: query, mode: "insensitive" } },
+            {
+              artikel_tag: {
+                some: {
+                  tag: {
+                    nama: { contains: query, mode: "insensitive" },
+                  },
                 },
               },
             },
-          },
-        ],
-      },
-      include: {
-        kategori: true,
-      },
-      orderBy: { diterbitkan_pada: "desc" },
-    });
-  } else {
-    articles = await prisma.artikel.findMany({
-      where: {
-        status: "PUBLISHED",
-        is_draft: false,
-        deleted_at: null,
-      },
-      include: { kategori: true },
-      orderBy: { diterbitkan_pada: "desc" },
-      take: 12,
-    });
-  }
+          ],
+        },
+        include: {
+          kategori: true,
+        },
+        orderBy: { diterbitkan_pada: "desc" },
+      })
+    : await prisma.artikel.findMany({
+        where: {
+          status: "PUBLISHED",
+          is_draft: false,
+          deleted_at: null,
+        },
+        include: { kategori: true },
+        orderBy: { diterbitkan_pada: "desc" },
+        take: 12,
+      });
 
   const categories = await prisma.kategori.findMany({
     where: { deleted_at: null },

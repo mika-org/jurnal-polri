@@ -41,11 +41,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={`${inter.variable} h-full antialiased`}>
+    <html lang="id" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
       </head>
-      <body className="min-h-full flex flex-col font-sans bg-white dark:bg-[#120808] text-stone-900 dark:text-stone-100 transition-colors">
+      <body
+        suppressHydrationWarning
+        className="min-h-full flex flex-col font-sans bg-white dark:bg-[#120808] text-stone-900 dark:text-stone-100 transition-colors"
+      >
         {children}
       </body>
     </html>

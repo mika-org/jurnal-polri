@@ -139,6 +139,7 @@ model Artikel {
   penulis          Pengguna      @relation(fields: [penulis_id], references: [id])
   kategori         Kategori      @relation(fields: [kategori_id], references: [id])
   artikel_tag      ArtikelTag[]
+  komentar         Komentar[]
   created_at       DateTime      @default(now())
   updated_at       DateTime      @updatedAt
   deleted_at       DateTime?
@@ -218,3 +219,36 @@ model PesanKontak {
 
   @@map("pesan_kontak")
 }
+
+model Komentar {
+  id         String     @id @default(uuid()) @db.Uuid
+  artikel_id String     @db.Uuid
+  artikel    Artikel    @relation(fields: [artikel_id], references: [id], onDelete: Cascade)
+  nama       String?
+  isi        String     @db.Text
+  parent_id  String?    @db.Uuid
+  induk      Komentar?  @relation("BalasanKomentar", fields: [parent_id], references: [id], onDelete: Cascade)
+  balasan    Komentar[] @relation("BalasanKomentar")
+  created_at DateTime   @default(now())
+  updated_at DateTime   @updatedAt
+  deleted_at DateTime?
+
+  @@index([artikel_id])
+  @@index([parent_id])
+  @@map("komentar")
+}
+
+model EdisiKoran {
+  id          String    @id @default(uuid()) @db.Uuid
+  judul       String
+  nomor_edisi String?
+  tanggal     DateTime  @default(now())
+  data_layout String    @db.Text
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+  deleted_at  DateTime?
+
+  @@map("edisi_koran")
+}
+
+

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -16,6 +16,17 @@ export default function Header({ categories = [] }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const categoryRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (categoryRef.current && !categoryRef.current.contains(event.target as Node)) {
+        setIsCategoryOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +37,7 @@ export default function Header({ categories = [] }: HeaderProps) {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-[#680000] border-b border-[#550000] shadow-md transition-colors relative overflow-hidden select-none">
+    <header className="sticky top-0 z-50 bg-[#680000] border-b border-[#550000] shadow-md transition-colors relative select-none">
       {/* Background Decorative Multi-Layer Orange/White Swoosh */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="relative w-full h-full">
@@ -35,7 +46,7 @@ export default function Header({ categories = [] }: HeaderProps) {
             alt="Header decorative swoosh"
             fill
             priority
-            className="object-cover object-left"
+            className="w-full h-full object-fill"
           />
         </div>
       </div>
@@ -59,76 +70,86 @@ export default function Header({ categories = [] }: HeaderProps) {
             </div>
           </Link>
 
-          {/* Desktop Nav Pill (White Rounded-full with Dark Red Maroon Text) */}
-          <nav className="hidden xl:flex items-center bg-white rounded-full border border-stone-200/90 px-6 py-2 shadow-xs gap-5 text-xs lg:text-[13px] font-semibold text-[#7A0C0C] shrink-0">
+          {/* Desktop Nav Pill */}
+          <nav className="hidden xl:flex items-center bg-white rounded-full border border-stone-200/90 px-6 py-2 shadow-xs gap-5 text-xs lg:text-[13px] font-semibold text-stone-700 shrink-0">
             <Link
               href="/"
-              className="hover:text-[#B91C1C] transition-colors"
+              className="hover:text-[#7A0C0C] transition-colors"
             >
               Beranda
             </Link>
 
             {/* Kategori Dropdown */}
             <div
-              className="relative"
+              ref={categoryRef}
+              className="relative py-1"
               onMouseEnter={() => setIsCategoryOpen(true)}
               onMouseLeave={() => setIsCategoryOpen(false)}
             >
               <button
-                className="flex items-center gap-1 hover:text-[#B91C1C] transition-colors cursor-pointer"
+                type="button"
+                onClick={() => setIsCategoryOpen((prev) => !prev)}
+                className="flex items-center gap-1 hover:text-[#7A0C0C] transition-colors cursor-pointer select-none"
                 aria-expanded={isCategoryOpen}
               >
                 <span>Kategori</span>
-                <ChevronDown className="w-3.5 h-3.5 text-[#7A0C0C]" />
+                <ChevronDown className={`w-3.5 h-3.5 text-stone-500 transition-transform duration-200 ${isCategoryOpen ? "rotate-180 text-[#7A0C0C]" : ""}`} />
               </button>
 
               {isCategoryOpen && (
-                <div className="absolute top-full left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-stone-200 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                  {categories.length > 0 ? (
-                    categories.map((cat) => (
-                      <Link
-                        key={cat.id}
-                        href={`/kategori/${cat.slug}`}
-                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C] transition-colors"
-                        onClick={() => setIsCategoryOpen(false)}
-                      >
-                        {cat.nama}
-                      </Link>
-                    ))
-                  ) : (
-                    <>
-                      <Link
-                        href="/kategori/politik"
-                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
-                      >
-                        Politik
-                      </Link>
-                      <Link
-                        href="/kategori/hukum"
-                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
-                      >
-                        Hukum
-                      </Link>
-                      <Link
-                        href="/kategori/sosial"
-                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
-                      >
-                        Sosial
-                      </Link>
-                      <Link
-                        href="/kategori/patroli"
-                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
-                      >
-                        Patroli
-                      </Link>
-                      <Link
-                        href="/kategori/lalu-lintas"
-                        className="block px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-[#FBEFEF] hover:text-[#7A0C0C]"
-                      >
-                        Lalu Lintas
-                      </Link>
-                    </>
-                  )}
+                <div className="absolute top-full left-0 pt-2 w-52 z-[100] animate-in fade-in slide-in-from-top-1 duration-150">
+                  <div className="bg-white rounded-xl shadow-2xl border border-stone-200 py-2">
+                    {categories.length > 0 ? (
+                      categories.map((cat) => (
+                        <Link
+                          key={cat.id}
+                          href={`/kategori/${cat.slug}`}
+                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                          onClick={() => setIsCategoryOpen(false)}
+                        >
+                          {cat.nama}
+                        </Link>
+                      ))
+                    ) : (
+                      <>
+                        <Link
+                          href="/kategori/politik"
+                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                          onClick={() => setIsCategoryOpen(false)}
+                        >
+                          Politik
+                        </Link>
+                        <Link
+                          href="/kategori/hukum"
+                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                          onClick={() => setIsCategoryOpen(false)}
+                        >
+                          Hukum
+                        </Link>
+                        <Link
+                          href="/kategori/sosial"
+                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                          onClick={() => setIsCategoryOpen(false)}
+                        >
+                          Sosial
+                        </Link>
+                        <Link
+                          href="/kategori/patroli"
+                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                          onClick={() => setIsCategoryOpen(false)}
+                        >
+                          Patroli
+                        </Link>
+                        <Link
+                          href="/kategori/lalu-lintas"
+                          className="block px-4 py-2.5 text-xs font-semibold text-stone-700 hover:bg-stone-100 hover:text-stone-900 transition-colors"
+                          onClick={() => setIsCategoryOpen(false)}
+                        >
+                          Lalu Lintas
+                        </Link>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
