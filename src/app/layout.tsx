@@ -22,7 +22,9 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Redaksi Jurnal Polisi" }],
   icons: {
-    icon: "/images/logo.svg",
+    icon: "/images/logo-icon.png",
+    shortcut: "/images/logo-icon.png",
+    apple: "/images/logo-icon.png",
   },
   openGraph: {
     title: "Jurnal Polisi - Portal Berita & Informasi Hukum Terpercaya",
@@ -43,7 +45,8 @@ export default function RootLayout({
   return (
     <html lang="id" className={`${inter.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/images/logo.svg" type="image/svg+xml" />
+        <link rel="icon" href="/images/logo-icon.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/images/logo-icon.png" />
       </head>
       <body
         suppressHydrationWarning

@@ -48,9 +48,15 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-md bg-[#1E1010] border border-[#3E1A1A] rounded-2xl shadow-2xl p-8 relative z-10 backdrop-blur-md">
         {/* Logo and Title */}
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#7F0000] to-[#E50914] p-0.5 shadow-lg mb-4 flex items-center justify-center">
-            <div className="w-full h-full bg-[#1E1010] rounded-[14px] flex items-center justify-center text-amber-400">
-              <Shield className="w-8 h-8" />
+          <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-[#7F0000] to-[#E50914] shadow-xl mb-4 flex items-center justify-center">
+            <div className="relative w-full h-full rounded-full overflow-hidden bg-black/40">
+              <Image
+                src="/images/logo-bulat.png"
+                alt="Jurnal Polisi"
+                fill
+                priority
+                className="object-contain p-0.5"
+              />
             </div>
           </div>
 

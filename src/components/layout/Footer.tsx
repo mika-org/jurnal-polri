@@ -27,11 +27,11 @@ export default function Footer({ categories = [], settings = {} }: FooterProps) 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 pb-12 border-b border-white/10">
           {/* Column 1: Brand & About */}
           <div className="space-y-4">
-            <Link href="/" className="block">
-              <div className="relative w-[230px] h-[55px]">
+            <Link href="/" className="inline-block group focus:outline-none" aria-label="Beranda Jurnal Polisi">
+              <div className="relative h-[62px] sm:h-[68px] aspect-[1024/341] rounded-lg overflow-hidden shadow-md border border-white/15 group-hover:border-amber-400/50 transition-colors">
                 <Image
-                  src="/images/logo.svg"
-                  alt="Jurnal Polisi"
+                  src="/images/logo-banner.webp"
+                  alt="Jurnal Polisi - Media Mitra Polri & TNI"
                   fill
                   className="object-contain object-left"
                 />

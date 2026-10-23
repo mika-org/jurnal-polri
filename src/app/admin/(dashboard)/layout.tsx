@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { getCurrentUser, isSuperAdminUser } from "@/lib/auth";
 import { ExternalLink, Shield } from "lucide-react";
@@ -30,8 +31,13 @@ export default async function AdminDashboardLayout({
         {/* Brand Header */}
         <div className="h-16 border-b border-[#2C1414] px-5 flex items-center justify-between">
           <Link href="/admin" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#7F0000] to-[#E50914] flex items-center justify-center text-amber-300 font-bold shadow">
-              <Shield className="w-4 h-4" />
+            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-black/40 border border-amber-400/30 shrink-0">
+              <Image
+                src="/images/logo-icon.png"
+                alt="Logo Presisi"
+                fill
+                className="object-contain p-0.5"
+              />
             </div>
             <div>
               <span className="text-sm font-bold tracking-tight text-white block">

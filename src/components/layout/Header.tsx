@@ -53,15 +53,15 @@ export default function Header({ categories = [] }: HeaderProps) {
 
       <div className="relative max-w-[1340px] mx-auto px-3 sm:px-5 lg:px-7">
         <div className="flex items-center justify-between h-20 gap-3">
-          {/* Logo Area (Left: Badge, Jurnal, Media Mitra, Polisi, Motto) */}
+          {/* Logo Area (Official Banner: Badge, Jurnal, Media Mitra, Polisi, Motto) */}
           <Link
             href="/"
-            className="relative z-10 flex items-center shrink-0 py-1 focus:outline-none"
+            className="relative z-10 flex items-center shrink-0 py-1 focus:outline-none group"
             aria-label="Beranda Jurnal Polisi"
           >
-            <div className="relative w-[270px] sm:w-[320px] lg:w-[340px] h-[64px]">
+            <div className="relative h-[56px] sm:h-[62px] lg:h-[66px] aspect-[1024/341] rounded-lg overflow-hidden shadow-sm group-hover:opacity-95 transition-all">
               <Image
-                src="/images/logo.svg"
+                src="/images/logo-banner.webp"
                 alt="Jurnal Polisi - Media Mitra Polri & TNI"
                 fill
                 priority
