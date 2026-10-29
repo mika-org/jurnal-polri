@@ -892,7 +892,7 @@ export default function NewspaperA4Canvas({
                   {/* ───────────────────────────────────────────────────────── */}
                   {/* BLOCK VARIANT 3: MULTI-COLUMN TEXT ARTICLE (Khas Koran) */}
                   {/* ───────────────────────────────────────────────────────── */}
-                  {block.type === "text_columns" && block.type !== "redaksi_box" && !block.id.includes("redaksi-box") && (() => {
+                  {block.type === "text_columns" && !block.id.includes("redaksi-box") && (() => {
                     const imgPos = block.imagePosition || "left";
                     const isTop = imgPos === "top";
                     const isRight = imgPos === "right";

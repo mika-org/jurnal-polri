@@ -1421,22 +1421,6 @@ export default function KoranClientManager({
                 </div>
               </div>
 
-              {/* Info khusus Boks Susunan Redaksi Gambar 2 */}
-              {formType === "redaksi_box" && (
-                <div className="p-3 bg-stone-100 rounded-xl border border-stone-300 text-stone-700 text-xs space-y-1">
-                  <div className="font-bold text-stone-900 flex items-center gap-1.5">
-                    <BookOpen className="w-4 h-4 text-stone-700" />
-                    <span>Boks Susunan Redaksi (Format Resmi Cetak Koran Sesuai Gambar 2)</span>
-                  </div>
-                  <p className="text-[11px] leading-relaxed text-stone-600">
-                    Kotak ini menampilkan logo resmi hitam-putih, legalitas pers (UU Pokok Pers No. 40/1999 &amp; Dewan Pers SPRI), hierarki Dewan Pembina s/d jajaran wartawan, dan alamat kantor redaksi pusat persis seperti pada <strong>Gambar 2</strong>.
-                  </p>
-                  <p className="text-[10px] text-stone-500 font-semibold">
-                    * Gunakan pilihan lebar kotak di atas untuk mengatur lebar (rekomendasi: <strong>5 kolom</strong>).
-                  </p>
-                </div>
-              )}
-
               {/* Text Columns & Dynamic Image Position Selector if type is text_columns */}
               {formType === "text_columns" && (
                 <div className="space-y-3 p-3 bg-amber-50/50 rounded-xl border border-amber-200">
