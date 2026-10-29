@@ -553,6 +553,60 @@ export default function KoranClientManager({
     });
   };
 
+  // Terapkan Format Halaman Isi Klasik Gambar 2 (Jendela Redaksi Hitam Putih) pada halaman aktif
+  const handleApplyPage2FormatLama = (pageIdx: number) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Terapkan Format Klasik (Gambar 2)",
+      message: `Terapkan susunan Halaman Isi Klasik Hitam Putih (Boks Susunan Redaksi + 2 Berita Kolom sesuai Gambar 2) ke Halaman ${pageIdx + 1}?`,
+      confirmText: "Ya, Terapkan Format Gambar 2",
+      variant: "warning",
+      action: async () => {
+        setNewspaperData((prev) => {
+          const pages = [...prev.pages];
+          if (pages[pageIdx]) {
+            pages[pageIdx] = {
+              ...pages[pageIdx],
+              showCoverMasthead: false,
+              runningHeader: "JENDELA REDAKSI",
+              isGrayscale: true,
+              blocks: JSON.parse(JSON.stringify(PAGE_2_PRESET_JENDELA_REDAKSI.blocks)),
+            };
+          }
+          return { ...prev, pages };
+        });
+        setSuccessMessage(`Format Klasik Gambar 2 (Jendela Redaksi B&W) berhasil diterapkan pada Halaman ${pageIdx + 1}!`);
+        setTimeout(() => setSuccessMessage(""), 4000);
+      },
+    });
+  };
+
+  // Sisipkan Boks Susunan Redaksi Langsung ke Halaman Aktif
+  const handleInsertRedaksiBox = (pageIdx: number) => {
+    const redaksiBoxBlock: NewspaperBlock = {
+      id: `block-redaksi-box-${Date.now()}`,
+      type: "redaksi_box",
+      title: "BOKS SUSUNAN REDAKSI",
+      colSpan: 5,
+      textColumns: 1,
+      content: "",
+      fontSize: "xs",
+      themeColor: "white",
+    };
+    setNewspaperData((prev) => {
+      const pages = [...prev.pages];
+      if (pages[pageIdx]) {
+        pages[pageIdx] = {
+          ...pages[pageIdx],
+          blocks: [redaksiBoxBlock, ...pages[pageIdx].blocks],
+        };
+      }
+      return { ...prev, pages };
+    });
+    setSuccessMessage("Boks Susunan Redaksi (Format Gambar 2) berhasil ditambahkan ke halaman!");
+    setTimeout(() => setSuccessMessage(""), 4000);
+  };
+
   // Update a block
   const handleUpdateBlock = (pageIdx: number, blockId: string, updates: Partial<NewspaperBlock>) => {
     setNewspaperData((prev) => {
@@ -773,6 +827,17 @@ export default function KoranClientManager({
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {/* Format Lama Preset (Gambar 1 Cover & Gambar 2 Halaman Isi B&W) */}
+          <button
+            type="button"
+            onClick={handleApplyFullFormatLama}
+            className="inline-flex items-center gap-1.5 bg-stone-900 hover:bg-black text-amber-300 border border-amber-400/40 px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
+            title="Terapkan format edisi koran klasik lengkap: Halaman 1 Cover (Gambar 1) & Halaman 2 Jendela Redaksi B&W (Gambar 2)"
+          >
+            <BookOpen className="w-4 h-4 text-amber-400" />
+            <span>Format Lama (Gambar 1 &amp; 2)</span>
+          </button>
+
           {/* Tambah Koran Baru / Edisi Selanjutnya */}
           <button
             type="button"
@@ -1127,6 +1192,27 @@ export default function KoranClientManager({
                     </button>
                   ))}
                 </div>
+
+                {/* Tombol Format Klasik Gambar 2 & Tambah Boks Redaksi */}
+                <button
+                  type="button"
+                  onClick={() => handleApplyPage2FormatLama(activePageIndex)}
+                  className="px-2 py-0.5 rounded bg-stone-900 hover:bg-black text-amber-300 border border-amber-400/50 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1"
+                  title="Terapkan susunan Halaman Isi Klasik Hitam Putih (Boks Susunan Redaksi + 2 Berita Kolom sesuai Gambar 2)"
+                >
+                  <BookOpen className="w-2.5 h-2.5 text-amber-400" />
+                  <span>Format Gambar 2 (Jendela Redaksi B&amp;W)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleInsertRedaksiBox(activePageIndex)}
+                  className="px-2 py-0.5 rounded bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1 shadow-2xs"
+                  title="Tambahkan Boks Susunan Redaksi Resmi (sesuai Gambar 2) ke halaman ini"
+                >
+                  <Plus className="w-2.5 h-2.5 text-stone-600" />
+                  <span>+ Boks Redaksi</span>
+                </button>
               </div>
             )}
 
