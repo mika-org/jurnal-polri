@@ -51,15 +51,15 @@ export default function Header({ categories = [] }: HeaderProps) {
         </div>
       </div>
 
-      <div className="relative max-w-[1340px] mx-auto px-3 sm:px-5 lg:px-7">
-        <div className="flex items-center justify-between h-24 gap-4">
+      <div className="relative max-w-[1340px] mx-auto px-2.5 sm:px-5 lg:px-7">
+        <div className="flex items-center justify-between h-24 gap-2 sm:gap-4">
           {/* Logo Area (Official Transparent Logo: Badge, Jurnal, Media Mitra, Polisi, Motto) */}
           <Link
             href="/"
             className="relative z-10 flex items-center shrink-0 py-1 focus:outline-none group"
             aria-label="Beranda Jurnal Polisi"
           >
-            <div className="relative h-[62px] sm:h-[70px] lg:h-[76px] aspect-[329/92] group-hover:scale-[1.01] transition-transform">
+            <div className="relative h-[76px] min-[390px]:h-[80px] sm:h-[82px] lg:h-[86px] aspect-[329/92] group-hover:scale-[1.01] transition-transform">
               <Image
                 src="/images/logo-hd.webp"
                 alt="Jurnal Polisi - Media Mitra Polri & TNI"
@@ -196,7 +196,7 @@ export default function Header({ categories = [] }: HeaderProps) {
           </form>
 
           {/* Right Action Icons (Moon ThemeToggle + Hamburger Menu) */}
-          <div className="flex items-center gap-3 shrink-0 relative z-10">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0 relative z-10">
             {/* Dark Mode Moon Toggle */}
             <ThemeToggle />
 

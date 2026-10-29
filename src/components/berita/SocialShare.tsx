@@ -24,7 +24,7 @@ export default function SocialShare({
     if (typeof window !== "undefined") {
       return window.location.href;
     }
-    return slug ? `https://jurnalpolisi.co.id/berita/${slug}` : "https://jurnalpolisi.co.id";
+    return slug ? `https://jurnal-polri.elevore.web.id/berita/${slug}` : "https://jurnal-polri.elevore.web.id";
   };
 
   const showToast = (msg: string) => {
@@ -66,7 +66,7 @@ export default function SocialShare({
   const handleShareWhatsApp = (e: React.MouseEvent) => {
     e.preventDefault();
     const url = getShareUrl();
-    const text = `${title}\n\nBaca selengkapnya di Jurnal Polisi:\n${url}`;
+    const text = `${url}\n\n*${title}*\n\nBaca selengkapnya di Jurnal Polisi.`;
     const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
     window.open(waUrl, "_blank");
   };

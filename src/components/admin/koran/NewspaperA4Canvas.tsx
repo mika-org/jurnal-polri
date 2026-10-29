@@ -38,6 +38,8 @@ interface NewspaperA4CanvasProps {
   onOpenEditModal: (pageIndex: number, block: NewspaperBlock) => void;
   onOpenHeaderModal?: () => void;
   onAddBlock?: (pageIndex: number, block: NewspaperBlock) => void;
+  onUpdatePageHeader?: (pageIndex: number, newHeader: string) => void;
+  onUpdateCoverVersion?: (pageIndex: number, version: "v1_lama" | "v2_baru") => void;
 }
 
 function getColSpanClass(span: number): string {
@@ -82,6 +84,8 @@ export default function NewspaperA4Canvas({
   onOpenEditModal,
   onOpenHeaderModal,
   onAddBlock,
+  onUpdatePageHeader,
+  onUpdateCoverVersion,
 }: NewspaperA4CanvasProps) {
   const [draggedBlockIndex, setDraggedBlockIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
@@ -429,51 +433,145 @@ export default function NewspaperA4Canvas({
 
               {/* Full Width Edition Badge */}
               {data.masthead.showEditionBar !== false && (
-                <div className="w-full bg-[#E65100] border-x border-b border-black py-0.5 px-3 flex items-center justify-between text-white text-xs font-serif shadow-xs group/edbar">
-                  <span className="font-bold text-[10px] uppercase">
-                    LEMBAR KHUSUS PERS &amp; INFORMASI PUBLIK
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="font-black text-sm tracking-widest uppercase drop-shadow-sm">
-                      {data.masthead.editionBadge || "EDISI CETAK"}
-                    </span>
-                    {isEditorMode && !isPrintTarget && onOpenHeaderModal && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onOpenHeaderModal();
-                        }}
-                        className="opacity-75 hover:opacity-100 bg-black/40 hover:bg-black/70 px-1.5 py-0.5 rounded text-[9px] font-sans font-bold text-white border border-white/40 cursor-pointer flex items-center gap-1 transition-all"
-                        title="Klik untuk mengubah Judul Edisi pada Cover"
-                      >
-                        <Edit className="w-2.5 h-2.5 text-amber-300" />
-                        <span>Ubah Judul Edisi</span>
-                      </button>
-                    )}
-                  </div>
-                  <span className="font-bold text-[10px] uppercase">
-                    HALAMAN {page.pageNumber}
-                  </span>
-                </div>
+                (() => {
+                  const isV1Lama = (page.coverVersion || data.masthead.coverVersion || "v1_lama") === "v1_lama";
+                  if (isV1Lama) {
+                    return (
+                      /* Versi Lama (Gambar 1): Strip Merah Solid dengan Judul Edisi Terpusat Tebal */
+                      <div className="w-full bg-[#B71C1C] border-x border-b border-black py-1 px-3 flex items-center justify-between text-white text-xs font-serif shadow-xs group/edbar">
+                        <div className="w-20 hidden sm:block">
+                          <span className="text-[9px] font-sans font-bold uppercase tracking-wider text-red-200">
+                            VERSI LAMA
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-center gap-2 flex-1">
+                          <span className="font-serif font-black text-sm tracking-widest uppercase drop-shadow-sm text-center">
+                            {data.masthead.editionBadge || "EDISI OKTOBER 2026"}
+                          </span>
+                          {isEditorMode && !isPrintTarget && onOpenHeaderModal && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenHeaderModal();
+                              }}
+                              className="opacity-80 hover:opacity-100 bg-black/40 hover:bg-black/70 px-1.5 py-0.5 rounded text-[9px] font-sans font-bold text-white border border-white/40 cursor-pointer flex items-center gap-1 transition-all"
+                              title="Klik untuk mengubah Judul Edisi pada Cover"
+                            >
+                              <Edit className="w-2.5 h-2.5 text-amber-300" />
+                              <span>Ubah Edisi</span>
+                            </button>
+                          )}
+                        </div>
+                        <div className="w-28 flex justify-end">
+                          {isEditorMode && !isPrintTarget && onUpdateCoverVersion && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onUpdateCoverVersion(pageIdx, "v2_baru");
+                              }}
+                              className="bg-black/50 hover:bg-black/80 text-[8.5px] font-sans font-bold px-2 py-0.5 rounded text-amber-300 border border-amber-300/40 cursor-pointer transition-all flex items-center gap-1"
+                              title="Ganti Format Cover ke Versi Baru (Modern)"
+                            >
+                              <span>Versi Baru</span>
+                              <ChevronRight className="w-2.5 h-2.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  /* Versi Baru (Existing Modern): Strip Oranye 3 Segmen */
+                  return (
+                    <div className="w-full bg-[#E65100] border-x border-b border-black py-0.5 px-3 flex items-center justify-between text-white text-xs font-serif shadow-xs group/edbar">
+                      <span className="font-bold text-[10px] uppercase">
+                        LEMBAR KHUSUS PERS &amp; INFORMASI PUBLIK
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-black text-sm tracking-widest uppercase drop-shadow-sm">
+                          {data.masthead.editionBadge || "EDISI CETAK"}
+                        </span>
+                        {isEditorMode && !isPrintTarget && onOpenHeaderModal && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenHeaderModal();
+                            }}
+                            className="opacity-75 hover:opacity-100 bg-black/40 hover:bg-black/70 px-1.5 py-0.5 rounded text-[9px] font-sans font-bold text-white border border-white/40 cursor-pointer flex items-center gap-1 transition-all"
+                            title="Klik untuk mengubah Judul Edisi pada Cover"
+                          >
+                            <Edit className="w-2.5 h-2.5 text-amber-300" />
+                            <span>Ubah Judul Edisi</span>
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isEditorMode && !isPrintTarget && onUpdateCoverVersion && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onUpdateCoverVersion(pageIdx, "v1_lama");
+                            }}
+                            className="bg-black/50 hover:bg-black/80 text-[8.5px] font-sans font-bold px-1.5 py-0.5 rounded text-amber-300 border border-amber-300/40 cursor-pointer transition-all flex items-center gap-1"
+                            title="Ganti Format Cover ke Versi Lama (Gambar 1)"
+                          >
+                            <ChevronLeft className="w-2.5 h-2.5" />
+                            <span>Versi Lama</span>
+                          </button>
+                        )}
+                        <span className="font-bold text-[10px] uppercase">
+                          HALAMAN {page.pageNumber}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })()
               )}
             </header>
           ) : (
-            /* Sub-Page Running Header */
-            <header className="w-full shrink-0 border-b-2 border-black pb-1 mb-1.5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="font-serif font-black text-lg text-[#7F0000] uppercase tracking-tight">
+            /* Sub-Page Running Header (Format Persis Gambar 2 dengan Header Judul yang Bisa Diedit Per Halaman) */
+            <header className="w-full shrink-0 border border-black bg-[#E2E8F0] px-3 py-1 mb-1.5 flex items-center justify-between text-black font-serif shadow-xs">
+              {/* Left: Page number and Newspaper Title */}
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="font-serif font-black text-sm text-black">
+                  {page.pageNumber}
+                </span>
+                <span className="font-serif font-black text-sm uppercase tracking-wider text-black">
                   JURNAL POLISI
                 </span>
-                <span className="text-[10px] text-stone-500 font-bold uppercase">
-                  • {page.runningHeader || data.masthead.taglineBottom}
-                </span>
               </div>
-              <div className="flex items-center gap-2 text-[10px] font-bold uppercase text-stone-800">
-                <span>{data.masthead.editionBadge}</span>
-                <span className="w-1.5 h-1.5 rounded-full bg-red-700" />
-                <span className="bg-black text-white px-1.5 py-0.2 rounded font-mono">
-                  HAL. {page.pageNumber}
+
+              {/* Center: Customizable Page Title (e.g. JENDELA REDAKSI) */}
+              <div className="flex items-center gap-1.5 flex-1 max-w-sm justify-center mx-2">
+                {isEditorMode && !isPrintTarget ? (
+                  <div className="relative w-full flex items-center justify-center group/hdr">
+                    <input
+                      type="text"
+                      value={page.runningHeader ?? "JENDELA REDAKSI"}
+                      onChange={(e) => onUpdatePageHeader?.(pageIdx, e.target.value)}
+                      className="w-full max-w-[280px] bg-white hover:bg-amber-50 focus:bg-white border border-stone-400 focus:border-red-600 rounded px-2.5 py-0.5 font-serif font-black text-xs sm:text-sm uppercase tracking-widest text-center text-black focus:outline-none focus:ring-1 focus:ring-red-600 transition-all shadow-inner"
+                      placeholder="JUDUL HALAMAN (MISAL: JENDELA REDAKSI)"
+                      title="Klik untuk mengedit Judul Header Halaman Ini (misal: JENDELA REDAKSI, BERITA DAERAH, dll)"
+                    />
+                    <Edit className="w-3 h-3 text-stone-400 absolute right-1 pointer-events-none group-hover/hdr:text-red-600" />
+                  </div>
+                ) : (
+                  <span className="font-serif font-black text-xs sm:text-sm uppercase tracking-widest text-black text-center">
+                    {page.runningHeader || "JENDELA REDAKSI"}
+                  </span>
+                )}
+              </div>
+
+              {/* Right: Edition info (e.g. Edisi Oktober 2026) */}
+              <div className="text-right shrink-0">
+                <span className="font-serif text-[11px] font-semibold text-black tracking-normal">
+                  {data.masthead.editionBadge
+                    ? data.masthead.editionBadge.replace(/^EDISI\s+/i, "Edisi ")
+                    : "Edisi Oktober 2026"}
                 </span>
               </div>
             </header>
@@ -513,6 +611,10 @@ export default function NewspaperA4Canvas({
                       ? "bg-stone-900 text-white"
                       : block.themeColor === "orange"
                       ? "bg-[#FFF9F2] text-stone-900"
+                      : block.themeColor === "blue"
+                      ? "bg-[#D6EEFC] text-stone-950"
+                      : block.themeColor === "red"
+                      ? "bg-red-50/60 text-stone-950"
                       : "bg-white text-stone-900"
                   }`}
                   style={{
@@ -769,7 +871,17 @@ export default function NewspaperA4Canvas({
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
                       </div>
-                      <div className="relative z-10 bg-[#E65100]/90 backdrop-blur-xs p-1 border-t border-black">
+                      <div
+                        className={`relative z-10 p-1 border-t border-black ${
+                          block.themeColor === "blue"
+                            ? "bg-[#0B3C5D]/90 backdrop-blur-xs text-white"
+                            : block.themeColor === "orange"
+                            ? "bg-[#E65100]/90 backdrop-blur-xs text-white"
+                            : block.themeColor === "red"
+                            ? "bg-red-800/90 backdrop-blur-xs text-white"
+                            : "bg-black/85 backdrop-blur-xs text-white"
+                        }`}
+                      >
                         <p className="text-[8px] font-serif font-bold text-white line-clamp-2 leading-tight drop-shadow-xs">
                           {block.title}
                         </p>
@@ -780,7 +892,7 @@ export default function NewspaperA4Canvas({
                   {/* ───────────────────────────────────────────────────────── */}
                   {/* BLOCK VARIANT 3: MULTI-COLUMN TEXT ARTICLE (Khas Koran) */}
                   {/* ───────────────────────────────────────────────────────── */}
-                  {block.type === "text_columns" && (() => {
+                  {block.type === "text_columns" && block.type !== "redaksi_box" && !block.id.includes("redaksi-box") && (() => {
                     const imgPos = block.imagePosition || "left";
                     const isTop = imgPos === "top";
                     const isRight = imgPos === "right";
@@ -793,14 +905,57 @@ export default function NewspaperA4Canvas({
                         ? "text-[8.5px] leading-[1.3]"
                         : "text-[7.5px] leading-[1.25]";
 
+                    const isBlueTheme = block.themeColor === "blue";
+                    const isOrangeTheme = block.themeColor === "orange";
+                    const isRedTheme = block.themeColor === "red";
+                    const isDarkTheme = block.themeColor === "dark";
+
                     return (
-                      <div className="flex flex-col justify-between bg-[#FFF9F2] overflow-hidden flex-1 w-full">
-                        {/* Orange/Red Headline Bar */}
-                        <div className="bg-[#FA9805] border-b border-black p-1 shrink-0">
-                          <h3 className="font-serif font-extrabold text-[9px] text-stone-900 line-clamp-2 leading-tight uppercase">
-                            {block.title}
-                          </h3>
-                        </div>
+                      <div
+                        className={`flex flex-col justify-between overflow-hidden flex-1 w-full ${
+                          isBlueTheme
+                            ? "bg-[#D6EEFC] text-stone-950"
+                            : isOrangeTheme
+                            ? "bg-[#FFF9F2] text-stone-900"
+                            : isRedTheme
+                            ? "bg-red-50/50 text-stone-950"
+                            : isDarkTheme
+                            ? "bg-stone-900 text-white"
+                            : "bg-white text-stone-900"
+                        }`}
+                      >
+                        {/* Title Bar: Bedakan Versi Lama (Gambar 1: Kotak Biru Klasik) vs Versi Baru (Oranye) vs Putih (Gambar 2) */}
+                        {isBlueTheme ? (
+                          <div className="bg-[#85BDE6] border-b border-black px-2 py-1 shrink-0">
+                            <h3 className="font-serif font-black text-[9.5px] text-black line-clamp-2 leading-tight uppercase tracking-tight">
+                              {block.title}
+                            </h3>
+                          </div>
+                        ) : isOrangeTheme ? (
+                          <div className="bg-[#FA9805] border-b border-black p-1 shrink-0">
+                            <h3 className="font-serif font-extrabold text-[9px] text-stone-900 line-clamp-2 leading-tight uppercase">
+                              {block.title}
+                            </h3>
+                          </div>
+                        ) : isRedTheme ? (
+                          <div className="bg-red-700 border-b border-black p-1 shrink-0">
+                            <h3 className="font-serif font-extrabold text-[9px] text-white line-clamp-2 leading-tight uppercase">
+                              {block.title}
+                            </h3>
+                          </div>
+                        ) : isDarkTheme ? (
+                          <div className="bg-black border-b border-stone-800 p-1 shrink-0">
+                            <h3 className="font-serif font-extrabold text-[9px] text-amber-300 line-clamp-2 leading-tight uppercase">
+                              {block.title}
+                            </h3>
+                          </div>
+                        ) : (
+                          <div className="bg-white border-b border-black px-2 py-1 shrink-0 text-center">
+                            <h3 className="font-serif font-black text-[9.5px] text-black line-clamp-2 leading-snug">
+                              {block.title}
+                            </h3>
+                          </div>
+                        )}
 
                         {/* Content Body with Dynamic Image Placement */}
                         <div
@@ -903,6 +1058,137 @@ export default function NewspaperA4Canvas({
                           </span>
                         </div>
                       )}
+                    </div>
+                  )}
+
+                  {/* ───────────────────────────────────────────────────────── */}
+                  {/* BLOCK VARIANT 5: BOKS SUSUNAN REDAKSI (Koran Klasik Sesuai Gambar 2) */}
+                  {/* ───────────────────────────────────────────────────────── */}
+                  {(block.type === "redaksi_box" || block.id.includes("redaksi-box") || block.title.toLowerCase().includes("susunan redaksi")) && (
+                    <div className="flex flex-col bg-white border border-black p-1.5 h-full overflow-hidden text-black font-sans select-text justify-between">
+                      {/* 1. Header Masthead Logo in Black & White */}
+                      <div className="relative w-full border border-black overflow-hidden bg-black mb-1 p-1 shrink-0">
+                        <div className="relative w-full h-8 aspect-[329/92] mx-auto filter grayscale contrast-125">
+                          <Image
+                            src="/images/logo-hd.webp"
+                            alt="Jurnal Polisi B&W"
+                            fill
+                            sizes="200px"
+                            className="object-contain"
+                          />
+                        </div>
+                      </div>
+
+                      {/* 2. Legal / Registration Info */}
+                      <div className="text-[6.5px] leading-[1.2] text-center font-serif border-b border-black/40 pb-1 mb-0.5 shrink-0">
+                        <p className="font-bold">Terbit berdasarkan : UU Pokok Pers No. 40 Tahun 1999</p>
+                        <p className="font-extrabold uppercase tracking-wide">PT. MEDIA JURNAL PERS</p>
+                        <p>Nomor : AHU-00027.AH.01.01.TAHUN 2017 - NPWP : 95.994.024.0-424.000</p>
+                        <p className="font-bold">VERIFIKASI DEWAN PERS INDONESIA SPRI</p>
+                        <p>NO : 153/Sert-Pers-SPRI/X/2021</p>
+                      </div>
+
+                      {/* 3. Rounded Pill: SUSUNAN REDAKSI */}
+                      <div className="text-center my-0.5 shrink-0">
+                        <span className="inline-block border border-black rounded-full px-2.5 py-0.2 text-[6.8px] font-sans font-black tracking-wider bg-stone-100 uppercase">
+                          SUSUNAN REDAKSI :
+                        </span>
+                      </div>
+
+                      {/* 4. Editorial Staff Hierarchy */}
+                      <div className="flex-1 overflow-hidden text-[6px] leading-[1.18] font-sans space-y-0.5 text-center">
+                        <div>
+                          <p className="font-bold text-[6.5px] text-black">DEWAN PEMBINA :</p>
+                          <p className="text-stone-800">Irjen Pol. (Purn.) Anton Charliyan, Brigjen TNI Syahnan, Rahmatono Saputra, Didik Wibowo, Ams Rahoma, Andi C. Momon, N.Ag</p>
+                        </div>
+
+                        <div>
+                          <p className="font-bold text-[6.5px] text-black">DEWAN PENASEHAT :</p>
+                          <p className="text-stone-800">Irjen Pol. (Purn.) Anton Charliyan, Brigjen TNI Syahnan, Levi Ahimaya, Romy Kasnadi, Yentry Agung Sudaryo, Hilman Muslim, Gaspar Santika</p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-0.5 text-[6px] text-left">
+                          <div>
+                            <p className="font-bold text-black">PENASEHAT HUKUM :</p>
+                            <p>Adv. Ade Rusmana, S.H.</p>
+                            <p>Sadriyah Nur Quryadi, S.H.</p>
+                            <p>Muhammad Rizal Tanjung</p>
+                          </div>
+                          <div>
+                            <p className="font-bold text-black">PENANGGUNG JAWAB :</p>
+                            <p>Gronaldi, Royan</p>
+                            <p className="font-bold text-black mt-0.5">PIMPINAN UMUM :</p>
+                            <p>Herrydi Suryanegara</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-0.5 text-[6px] text-left">
+                          <div>
+                            <p className="font-bold text-black">BENDAHARA UMUM :</p>
+                            <p>Indriyani</p>
+                            <p className="font-bold text-black mt-0.5">PIMPINAN PERUSAHAAN :</p>
+                            <p>Herrydi Suryanegara</p>
+                          </div>
+                          <div>
+                            <p className="font-bold text-black">PIMPINAN REDAKSI :</p>
+                            <p>Gronaldi</p>
+                            <p className="font-bold text-black mt-0.5">WAKIL PIMPINAN REDAKSI :</p>
+                            <p>Romi Sartono</p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-0.5 text-[6px] text-left">
+                          <div>
+                            <p className="font-bold text-black">REDAKTUR PELAKSANA :</p>
+                            <p>Cecep Supriyadi</p>
+                          </div>
+                          <div>
+                            <p className="font-bold text-black">SEKRETARIS REDAKSI :</p>
+                            <p>Syamsuhadi Nugraha</p>
+                          </div>
+                        </div>
+
+                        <div className="text-left">
+                          <p className="font-bold text-black">STAFF REDAKSI :</p>
+                          <p>Iwan Supriana, Zainal Arifin Lani</p>
+                        </div>
+
+                        <div className="text-left">
+                          <p className="font-bold text-black">KEPALA PERWAKILAN :</p>
+                          <p className="line-clamp-3">
+                            Fery Melinda (Jabar), Uko Susanto (Jateng), Deddy Nuroyanto (Jatim), Bambang Kuncoro (Jateng), Ramdani M. Syari&apos;i (DKI), Saham Sihombing, S.Pd., M.Pd. (Sumut), Maswito Siregar (Sumut), Andi Sulaeman (Sulawesi), Jafrizal (Aceh), Edi Syafrizal (Kepri), Jasmadi Tarman (Bengkulu), Jafriadi (Sumbar), Samsul Rizal (Jambi), Sukardi (Kalbar), Yugo Munthe (Babel), Kiki (Banten).
+                          </p>
+                        </div>
+
+                        <div className="text-left">
+                          <p className="font-bold text-black">TIM INVESTIGASI NASIONAL :</p>
+                          <p className="line-clamp-2">
+                            Syamsuhadi Nugraha, Abdul Mujid, Daniel DA Samuel, Slamet Kurniawan, Zaenal, Abdul Rahman, Yusuf Humaera, Andi Muhammad A, Desta Diki M, Dini Iskandar, Toni Hidayat, Rajak, Doni Anggara, Muchtar, S.Pd., Cecep Solihin, Abdul Manaf, Irawan, Boni Hasoloan Sitorus.
+                          </p>
+                        </div>
+
+                        <div className="text-left">
+                          <p className="font-bold text-black">WARTAWAN :</p>
+                          <p className="line-clamp-2">
+                            Sripudin, Jumadi, Arfika Novel Wijaya, Iwan Syahputra, Lina Nomi, Deni Kiki, Dini, Rustamaji, Didin Sahidin, Aan Sunanto, Yayat Hidayat, Yanto Kasianto, Heru Hidayat, Dede Sujana, Sahat Rony, David Bambang, Karno Yusuf Saputra, Drs. Hasrul F. Siregar, Irham, Darmawan Santoso, Yanir, Rikiy, Jafrianto, Abdulah DZ.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* 5. Rounded Pill: ALAMAT KANTOR REDAKSI PUSAT */}
+                      <div className="text-center my-0.5 border-t border-black/30 pt-0.5 shrink-0">
+                        <span className="inline-block border border-black rounded-full px-2 py-0.2 text-[6.5px] font-sans font-black tracking-wider bg-stone-100 uppercase">
+                          ALAMAT KANTOR REDAKSI PUSAT :
+                        </span>
+                      </div>
+
+                      {/* 6. Office Address Info */}
+                      <div className="text-[5.8px] leading-[1.2] text-center font-serif shrink-0">
+                        <p>Jl. Raya Jatinangor No. 53 RT.01/RW.01 Cisempur, Kec. Jatinangor, Kab. Sumedang, Jawa Barat.</p>
+                        <p className="font-bold">HP : 081120008418 – 089608144118</p>
+                        <p>Rek. Bank BRI 4317-01-004.604-532 An: Indriyani</p>
+                        <p className="font-sans">E-mail: jurnalpolisi73@gmail.com</p>
+                      </div>
                     </div>
                   )}
                 </div>

@@ -13,6 +13,7 @@ import CommentSection from "@/components/berita/CommentSection";
 import { ambilKomentarArtikel } from "@/app/actions/komentar";
 import { Calendar, User, Eye, Share2, Tag as TagIcon, ArrowLeft } from "lucide-react";
 import { formatTanggalWaktu } from "@/lib/utils";
+import { getSiteUrl, toAbsoluteUrl } from "@/lib/site";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -22,18 +23,59 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const article = await prisma.artikel.findUnique({
     where: { slug },
+    include: {
+      kategori: true,
+      penulis: {
+        select: { nama_lengkap: true },
+      },
+    },
   });
 
   if (!article) return { title: "Berita Tidak Ditemukan | Jurnal Polisi" };
 
+  const siteUrl = getSiteUrl();
+  const pageUrl = `${siteUrl}/berita/${article.slug}`;
+  const ogImageUrl = `${siteUrl}/api/og-image?slug=${encodeURIComponent(article.slug)}`;
+  const directImageUrl = toAbsoluteUrl(article.gambar_sampul);
+
   return {
     title: `${article.judul} | Jurnal Polisi`,
     description: article.ringkasan,
+    metadataBase: new URL(siteUrl),
+    alternates: {
+      canonical: pageUrl,
+    },
     openGraph: {
       title: article.judul,
       description: article.ringkasan,
-      images: [article.gambar_sampul],
+      url: pageUrl,
+      siteName: "Jurnal Polisi",
+      locale: "id_ID",
       type: "article",
+      publishedTime: article.diterbitkan_pada ? new Date(article.diterbitkan_pada).toISOString() : undefined,
+      authors: article.penulis?.nama_lengkap ? [article.penulis.nama_lengkap] : ["Redaksi Jurnal Polisi"],
+      section: article.kategori?.nama || "Berita",
+      images: [
+        {
+          url: ogImageUrl,
+          secureUrl: ogImageUrl,
+          width: 1200,
+          height: 630,
+          type: "image/jpeg",
+          alt: article.judul,
+        },
+        {
+          url: directImageUrl,
+          secureUrl: directImageUrl,
+          alt: article.judul,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: article.judul,
+      description: article.ringkasan,
+      images: [ogImageUrl],
     },
   };
 }

@@ -26,6 +26,7 @@ import {
   FileText,
   ImageIcon,
   Shield,
+  BookOpen,
 } from "lucide-react";
 import NewspaperA4Canvas from "@/components/admin/koran/NewspaperA4Canvas";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -35,6 +36,9 @@ import {
   type MultiPageNewspaperData,
   DEFAULT_MULTIPAGE_DATA,
   parseNewspaperData,
+  COVER_PRESET_V1_LAMA,
+  COVER_PRESET_V2_BARU,
+  PAGE_2_PRESET_JENDELA_REDAKSI,
 } from "@/components/admin/koran/NewspaperTypes";
 import {
   simpanEdisiKoran,
@@ -323,12 +327,26 @@ export default function KoranClientManager({
   // Add a new A4 Page
   const handleAddPage = () => {
     const newPageNum = newspaperData.pages.length + 1;
+    const defaultHeaders = [
+      "JENDELA REDAKSI",
+      "BERITA UTAMA",
+      "HUKUM & KRIMINAL",
+      "LIPUTAN DAERAH",
+      "POLRES KITA",
+      "OPINI & TAJUK",
+    ];
+    const defaultHeader =
+      newPageNum === 2
+        ? "JENDELA REDAKSI"
+        : defaultHeaders[Math.min(newPageNum - 2, defaultHeaders.length - 1)] || "BERITA UTAMA";
+
     const newPage: NewspaperPage = {
       id: `page-${Date.now()}`,
       pageNumber: newPageNum,
-      title: `Halaman ${newPageNum} - Berita & Liputan`,
+      title: `Halaman ${newPageNum} - ${defaultHeader}`,
       showCoverMasthead: false,
-      runningHeader: `JURNAL POLISI • HALAMAN ${newPageNum}`,
+      runningHeader: defaultHeader,
+      isGrayscale: true, // Halaman isi format lama otomatis Hitam Putih!
       blocks: [
         {
           id: `block-${Date.now()}-1`,
@@ -339,7 +357,7 @@ export default function KoranClientManager({
           image: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=800&auto=format&fit=crop",
           colSpan: 12,
           textColumns: 3,
-          themeColor: "orange",
+          themeColor: "white",
         },
       ],
     };
@@ -386,6 +404,152 @@ export default function KoranClientManager({
         };
       }
       return { ...prev, pages };
+    });
+  };
+
+  // Update Running Header per halaman (Judul Rubrik Halaman Sesuai Gambar 2)
+  const handleUpdatePageHeader = (pageIdx: number, newHeader: string) => {
+    setNewspaperData((prev) => {
+      const pages = [...prev.pages];
+      if (pages[pageIdx]) {
+        pages[pageIdx] = {
+          ...pages[pageIdx],
+          runningHeader: newHeader,
+        };
+      }
+      return { ...prev, pages };
+    });
+  };
+
+  // Update Versi Cover (Versi Lama / Gambar 1 vs Versi Baru / Modern)
+  const handleUpdateCoverVersion = (pageIdx: number, version: "v1_lama" | "v2_baru") => {
+    setNewspaperData((prev) => {
+      const pages = [...prev.pages];
+      if (pages[pageIdx]) {
+        pages[pageIdx] = {
+          ...pages[pageIdx],
+          coverVersion: version,
+        };
+      }
+      return {
+        ...prev,
+        masthead: {
+          ...prev.masthead,
+          coverVersion: version,
+        },
+        pages,
+      };
+    });
+  };
+
+  // Terapkan Layout Format Section Cover Versi Lama (Gambar 1)
+  const handleApplyCoverV1Lama = (pageIdx: number) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Gunakan Format Cover Versi Lama (Gambar 1)",
+      message:
+        "Terapkan format cover Versi Lama (kotak section berita biru klasik & strip merah sesuai Gambar 1)? Kotak section di cover ini akan diperbarui.",
+      confirmText: "Ya, Terapkan Versi Lama",
+      variant: "warning",
+      action: async () => {
+        setNewspaperData((prev) => {
+          const pages = [...prev.pages];
+          if (pages[pageIdx]) {
+            pages[pageIdx] = {
+              ...pages[pageIdx],
+              coverVersion: "v1_lama",
+              blocks: JSON.parse(JSON.stringify(COVER_PRESET_V1_LAMA)),
+            };
+          }
+          return {
+            ...prev,
+            masthead: {
+              ...prev.masthead,
+              coverVersion: "v1_lama",
+            },
+            pages,
+          };
+        });
+        setSuccessMessage("Format Cover Versi Lama (Gambar 1) berhasil diterapkan!");
+        setTimeout(() => setSuccessMessage(""), 4000);
+      },
+    });
+  };
+
+  // Terapkan Layout Format Section Cover Versi Baru (Modern)
+  const handleApplyCoverV2Baru = (pageIdx: number) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Gunakan Format Cover Versi Baru (Modern)",
+      message:
+        "Terapkan format cover Versi Baru (card modern oranye & 3 segmen badge)? Kotak section di cover ini akan diperbarui.",
+      confirmText: "Ya, Terapkan Versi Baru",
+      variant: "warning",
+      action: async () => {
+        setNewspaperData((prev) => {
+          const pages = [...prev.pages];
+          if (pages[pageIdx]) {
+            pages[pageIdx] = {
+              ...pages[pageIdx],
+              coverVersion: "v2_baru",
+              blocks: JSON.parse(JSON.stringify(COVER_PRESET_V2_BARU)),
+            };
+          }
+          return {
+            ...prev,
+            masthead: {
+              ...prev.masthead,
+              coverVersion: "v2_baru",
+            },
+            pages,
+          };
+        });
+        setSuccessMessage("Format Cover Versi Baru (Modern) berhasil diterapkan!");
+        setTimeout(() => setSuccessMessage(""), 4000);
+      },
+    });
+  };
+
+  // Terapkan Edisi Format Lama Lengkap (Gambar 1 Cover + Gambar 2 Halaman Isi B&W)
+  const handleApplyFullFormatLama = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Terapkan Format Lama (Gambar 1 & Gambar 2)",
+      message:
+        "Terapkan format edisi koran cetak klasik lengkap? Halaman 1 akan diatur sebagai Cover Klasik (Gambar 1) dan Halaman 2 sebagai Jendela Redaksi & Berita Hitam Putih (Gambar 2).",
+      confirmText: "Ya, Terapkan Format Lama",
+      variant: "warning",
+      action: async () => {
+        setNewspaperData((prev) => ({
+          ...prev,
+          masthead: {
+            ...prev.masthead,
+            coverVersion: "v1_lama",
+            editionBadge: prev.masthead.editionBadge || "EDISI OKTOBER 2026",
+          },
+          pages: [
+            {
+              id: "page-1",
+              pageNumber: 1,
+              title: "Halaman 1 - Cover Utama",
+              showCoverMasthead: true,
+              coverVersion: "v1_lama",
+              runningHeader: "JURNAL POLISI • EDISI KHUSUS MITRA POLRI & TNI",
+              isGrayscale: false,
+              blocks: JSON.parse(JSON.stringify(COVER_PRESET_V1_LAMA)),
+            },
+            {
+              ...JSON.parse(JSON.stringify(PAGE_2_PRESET_JENDELA_REDAKSI)),
+              id: "page-2",
+              pageNumber: 2,
+              isGrayscale: true,
+            },
+          ],
+        }));
+        setActivePageIndex(0);
+        setSuccessMessage("Format Lama (Gambar 1 Cover & Gambar 2 Halaman Isi Hitam Putih) berhasil diterapkan!");
+        setTimeout(() => setSuccessMessage(""), 5000);
+      },
     });
   };
 
@@ -862,11 +1026,109 @@ export default function KoranClientManager({
                     masthead: { ...prev.masthead, editionBadge: val },
                   }));
                 }}
-                placeholder="misal: EDISI NOVEMBER 2026"
-                className="bg-white border border-stone-300 rounded px-2 py-0.5 text-xs font-black text-stone-900 focus:outline-none focus:ring-1 focus:ring-red-500 w-44 sm:w-52 uppercase"
+                placeholder="misal: EDISI OKTOBER 2026"
+                className="bg-white border border-stone-300 rounded px-2 py-0.5 text-xs font-black text-stone-900 focus:outline-none focus:ring-1 focus:ring-red-500 w-44 sm:w-48 uppercase"
                 title="Ketik untuk mengubah judul edisi langsung pada cover koran"
               />
             </div>
+
+            {/* Cover: Pemilihan Format Gaya Versi Lama (Gambar 1) vs Versi Baru (Modern) */}
+            {newspaperData.pages[activePageIndex]?.showCoverMasthead && (
+              <div className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-0.5 rounded-lg border border-stone-200">
+                <span className="text-stone-600 font-bold text-[10.5px] whitespace-nowrap">Format Cover:</span>
+                <div className="inline-flex rounded-md bg-stone-200 p-0.5 text-[10.5px] font-bold">
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateCoverVersion(activePageIndex, "v1_lama")}
+                    className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                      (newspaperData.pages[activePageIndex]?.coverVersion || newspaperData.masthead.coverVersion || "v1_lama") === "v1_lama"
+                        ? "bg-[#B71C1C] text-white shadow-xs"
+                        : "text-stone-600 hover:text-stone-900"
+                    }`}
+                    title="Versi Lama: Strip Merah, Kotak Section Biru Klasik (Sesuai Gambar 1)"
+                  >
+                    Versi Lama (Gambar 1)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleUpdateCoverVersion(activePageIndex, "v2_baru")}
+                    className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
+                      (newspaperData.pages[activePageIndex]?.coverVersion || newspaperData.masthead.coverVersion) === "v2_baru"
+                        ? "bg-[#E65100] text-white shadow-xs"
+                        : "text-stone-600 hover:text-stone-900"
+                    }`}
+                    title="Versi Baru: Strip Oranye 3 Segmen & Card Modern Oranye"
+                  >
+                    Versi Baru (Modern)
+                  </button>
+                </div>
+
+                {/* Tombol Terapkan Layout Cepat */}
+                {(newspaperData.pages[activePageIndex]?.coverVersion || newspaperData.masthead.coverVersion || "v1_lama") === "v1_lama" ? (
+                  <button
+                    type="button"
+                    onClick={() => handleApplyCoverV1Lama(activePageIndex)}
+                    className="px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1"
+                    title="Muat susunan kotak section khas Versi Lama (Gambar 1)"
+                  >
+                    <Sparkles className="w-2.5 h-2.5 text-blue-600" />
+                    <span>Terapkan Section Versi Lama</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => handleApplyCoverV2Baru(activePageIndex)}
+                    className="px-2 py-0.5 rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1"
+                    title="Muat susunan kotak section modern Versi Baru"
+                  >
+                    <Sparkles className="w-2.5 h-2.5 text-orange-600" />
+                    <span>Terapkan Section Versi Baru</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* Sub-Page: Edit Judul Header Halaman Per Halaman (Sesuai Gambar 2) */}
+            {!newspaperData.pages[activePageIndex]?.showCoverMasthead && (
+              <div className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-0.5 rounded-lg border border-stone-200">
+                <span className="text-stone-600 font-bold text-[10.5px] whitespace-nowrap flex items-center gap-1">
+                  <Edit className="w-3 h-3 text-red-600" />
+                  <span>Judul Header Halaman:</span>
+                </span>
+                <input
+                  type="text"
+                  value={newspaperData.pages[activePageIndex]?.runningHeader ?? "JENDELA REDAKSI"}
+                  onChange={(e) => handleUpdatePageHeader(activePageIndex, e.target.value)}
+                  placeholder="misal: JENDELA REDAKSI"
+                  className="bg-white border border-stone-300 rounded px-2 py-0.5 text-xs font-black text-stone-900 focus:outline-none focus:ring-1 focus:ring-red-500 w-36 sm:w-44 uppercase"
+                  title="Ketik untuk mengubah judul header di atas halaman ini (seperti pada Gambar 2)"
+                />
+
+                {/* Quick preset chips */}
+                <div className="hidden lg:flex items-center gap-1">
+                  {[
+                    "JENDELA REDAKSI",
+                    "BERITA UTAMA",
+                    "HUKUM & KRIMINAL",
+                    "LIPUTAN DAERAH",
+                    "POLRES KITA",
+                  ].map((chip) => (
+                    <button
+                      key={chip}
+                      type="button"
+                      onClick={() => handleUpdatePageHeader(activePageIndex, chip)}
+                      className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold transition-all cursor-pointer ${
+                        newspaperData.pages[activePageIndex]?.runningHeader === chip
+                          ? "bg-red-700 text-white"
+                          : "bg-white text-stone-700 border border-stone-200 hover:bg-stone-100"
+                      }`}
+                    >
+                      {chip}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Mode Hitam Putih / Berwarna Toggle */}
             <div className="flex items-center gap-1">
@@ -949,6 +1211,8 @@ export default function KoranClientManager({
           onOpenEditModal={handleOpenEditModal}
           onOpenHeaderModal={handleOpenHeaderModal}
           onAddBlock={handleAddBlockDirect}
+          onUpdatePageHeader={handleUpdatePageHeader}
+          onUpdateCoverVersion={handleUpdateCoverVersion}
         />
           </div>
         </>
@@ -1153,6 +1417,39 @@ export default function KoranClientManager({
                   </div>
                 </div>
               )}
+
+              {/* Pilihan Gaya Warna Tema Section (Bedakan Versi Lama vs Versi Baru) */}
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">
+                  Format Gaya Warna Section:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                  {[
+                    { id: "blue", label: "Biru Klasik", badge: "Versi Lama (Gambar 1)", bg: "bg-[#D6EEFC]", border: "border-blue-400" },
+                    { id: "orange", label: "Oranye Modern", badge: "Versi Baru", bg: "bg-[#FA9805]", border: "border-orange-500" },
+                    { id: "white", label: "Putih Bersih", badge: "Standar", bg: "bg-white", border: "border-stone-300" },
+                    { id: "dark", label: "Gelap Elegan", badge: "Hitam Tokoh", bg: "bg-stone-900", border: "border-black" },
+                    { id: "red", label: "Merah Presisi", badge: "Aksen Berita", bg: "bg-red-700", border: "border-red-800" },
+                  ].map((tc) => (
+                    <button
+                      key={tc.id}
+                      type="button"
+                      onClick={() => setFormThemeColor(tc.id as NewspaperBlock["themeColor"])}
+                      className={`p-2 rounded-lg border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                        formThemeColor === tc.id
+                          ? "ring-2 ring-red-600 border-red-600 bg-red-50/40"
+                          : "border-stone-200 bg-stone-50 hover:bg-stone-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-3.5 h-3.5 rounded-full ${tc.bg} border ${tc.border} shrink-0`} />
+                        <span className="font-bold text-[11px] text-stone-900">{tc.label}</span>
+                      </div>
+                      <span className="text-[9px] text-stone-500 mt-1">{tc.badge}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Title input */}
               <div>
@@ -1444,6 +1741,39 @@ export default function KoranClientManager({
                   </div>
                 </div>
               )}
+
+              {/* Pilihan Gaya Warna Tema Section (Bedakan Versi Lama vs Versi Baru) */}
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">
+                  Format Gaya Warna Section:
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                  {[
+                    { id: "blue", label: "Biru Klasik", badge: "Versi Lama (Gambar 1)", bg: "bg-[#D6EEFC]", border: "border-blue-400" },
+                    { id: "orange", label: "Oranye Modern", badge: "Versi Baru", bg: "bg-[#FA9805]", border: "border-orange-500" },
+                    { id: "white", label: "Putih Bersih", badge: "Standar", bg: "bg-white", border: "border-stone-300" },
+                    { id: "dark", label: "Gelap Elegan", badge: "Hitam Tokoh", bg: "bg-stone-900", border: "border-black" },
+                    { id: "red", label: "Merah Presisi", badge: "Aksen Berita", bg: "bg-red-700", border: "border-red-800" },
+                  ].map((tc) => (
+                    <button
+                      key={tc.id}
+                      type="button"
+                      onClick={() => setFormThemeColor(tc.id as NewspaperBlock["themeColor"])}
+                      className={`p-2 rounded-lg border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                        formThemeColor === tc.id
+                          ? "ring-2 ring-red-600 border-red-600 bg-red-50/40"
+                          : "border-stone-200 bg-stone-50 hover:bg-stone-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-1.5">
+                        <span className={`w-3.5 h-3.5 rounded-full ${tc.bg} border ${tc.border} shrink-0`} />
+                        <span className="font-bold text-[11px] text-stone-900">{tc.label}</span>
+                      </div>
+                      <span className="text-[9px] text-stone-500 mt-1">{tc.badge}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               {/* Title input */}
               <div>

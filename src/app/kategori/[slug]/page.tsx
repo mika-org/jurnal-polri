@@ -1,6 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { getSiteUrl } from "@/lib/site";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import NewsCard from "@/components/ui/NewsCard";
@@ -10,6 +12,58 @@ import { ArrowLeft, FolderOpen } from "lucide-react";
 
 interface PageProps {
   params: Promise<{ slug: string }>;
+}
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const currentCategory = await prisma.kategori.findUnique({
+    where: { slug },
+  });
+
+  if (!currentCategory || currentCategory.deleted_at) {
+    return { title: "Kategori Tidak Ditemukan | Jurnal Polisi" };
+  }
+
+  const siteUrl = getSiteUrl();
+  const pageUrl = `${siteUrl}/kategori/${slug}`;
+  const title = `Berita Kategori ${currentCategory.nama} | Jurnal Polisi`;
+  const description =
+    currentCategory.slogan ||
+    `Kumpulan berita seputar ${currentCategory.nama}, investigasi, penegakan hukum, dan perkembangan terkini.`;
+  const ogImage = `${siteUrl}/api/og-image`;
+
+  return {
+    title,
+    description,
+    metadataBase: new URL(siteUrl),
+    alternates: {
+      canonical: pageUrl,
+    },
+    openGraph: {
+      title,
+      description,
+      url: pageUrl,
+      siteName: "Jurnal Polisi",
+      locale: "id_ID",
+      type: "website",
+      images: [
+        {
+          url: ogImage,
+          secureUrl: ogImage,
+          width: 1200,
+          height: 630,
+          type: "image/jpeg",
+          alt: title,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [ogImage],
+    },
+  };
 }
 
 export default async function KategoriDetailPage({ params }: PageProps) {

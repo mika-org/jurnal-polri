@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { getSiteUrl } from "@/lib/site";
 import "./globals.css";
 
 const inter = Inter({
@@ -7,8 +8,15 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+const siteUrl = getSiteUrl();
+const defaultOgImage = `${siteUrl}/api/og-image`;
+
 export const metadata: Metadata = {
-  title: "Jurnal Polisi - Portal Berita & Informasi Hukum Terpercaya",
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Jurnal Polisi - Portal Berita & Informasi Hukum Terpercaya",
+    template: "%s | Jurnal Polisi",
+  },
   description:
     "Portal berita independen menyajikan informasi akurat seputar kepolisian, penegakan hukum, kamtibmas, dan pelayanan masyarakat.",
   keywords: [
@@ -29,11 +37,28 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Jurnal Polisi - Portal Berita & Informasi Hukum Terpercaya",
     description:
-      "Media berita independen menyajikan informasi akurat seputar kepolisian dan kamtibmas.",
-    url: "https://jurnalpolisi.id",
+      "Media berita independen menyajikan informasi akurat seputar kepolisian, penegakan hukum, dan kamtibmas.",
+    url: siteUrl,
     siteName: "Jurnal Polisi",
     locale: "id_ID",
     type: "website",
+    images: [
+      {
+        url: defaultOgImage,
+        secureUrl: defaultOgImage,
+        width: 1200,
+        height: 630,
+        type: "image/jpeg",
+        alt: "Jurnal Polisi - Portal Berita & Informasi Hukum Terpercaya",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Jurnal Polisi - Portal Berita & Informasi Hukum Terpercaya",
+    description:
+      "Portal berita independen menyajikan informasi akurat seputar kepolisian, penegakan hukum, dan kamtibmas.",
+    images: [defaultOgImage],
   },
 };
 
@@ -47,6 +72,7 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/images/logo-icon.png" type="image/png" />
         <link rel="apple-touch-icon" href="/images/logo-icon.png" />
+        <link rel="image_src" href={defaultOgImage} />
       </head>
       <body
         suppressHydrationWarning
