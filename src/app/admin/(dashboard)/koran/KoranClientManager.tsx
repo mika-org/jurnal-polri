@@ -791,6 +791,7 @@ export default function KoranClientManager({
       alert("Terjadi kesalahan jaringan saat mengunggah gambar");
     } finally {
       setUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -1647,9 +1648,9 @@ export default function KoranClientManager({
                 </div>
               )}
 
-              {/* Image upload / URL */}
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">
+              {/* Image upload / URL with Live Preview & WebP status */}
+              <div className="space-y-2">
+                <label className="block font-bold text-stone-700">
                   Foto Gambar (Otomatis Kompresi WebP):
                 </label>
                 <div className="flex gap-2 items-center">
@@ -1660,7 +1661,7 @@ export default function KoranClientManager({
                     placeholder="URL gambar atau unggah file di samping..."
                     className="flex-1 px-3 py-2 bg-white border border-stone-300 rounded-lg text-xs text-stone-900"
                   />
-                  <label className="px-3 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-lg text-stone-700 font-bold cursor-pointer transition-colors flex items-center gap-1.5">
+                  <label className="px-3 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-lg text-stone-700 font-bold cursor-pointer transition-colors flex items-center gap-1.5 shrink-0">
                     <Upload className="w-3.5 h-3.5" />
                     <span>{uploading ? "Mengompres..." : "Pilih File"}</span>
                     <input
@@ -1672,6 +1673,46 @@ export default function KoranClientManager({
                     />
                   </label>
                 </div>
+
+                {/* Live Preview Card */}
+                {formImage && (
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center gap-3">
+                    <div className="relative w-16 h-14 rounded-lg overflow-hidden border border-emerald-400 shrink-0 bg-white shadow-2xs">
+                      <img
+                        src={formImage}
+                        alt="Preview Foto"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "/images/ads/iklan-bunga.jpeg";
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1 text-emerald-800 font-bold text-xs">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Foto Berhasil Diunggah &amp; Siap Ditampilkan</span>
+                      </div>
+                      <p className="text-[10px] text-stone-600 truncate mt-0.5 font-mono">
+                        {formImage}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormImage("")}
+                      className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-[10px] font-bold rounded-md transition-colors cursor-pointer shrink-0"
+                      title="Hapus foto ini"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                )}
+
+                {uploading && (
+                  <div className="p-2.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center gap-2 text-amber-900 text-xs font-bold animate-pulse">
+                    <RefreshCw className="w-4 h-4 animate-spin text-amber-600 shrink-0" />
+                    <span>Sedang memproses kompresi WebP &amp; mengunggah gambar...</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1686,10 +1727,11 @@ export default function KoranClientManager({
               </button>
               <button
                 type="button"
+                disabled={uploading}
                 onClick={handleSaveAddBlock}
-                className="px-5 py-2 rounded-lg text-xs font-bold bg-[#E50914] hover:bg-[#B91C1C] text-white shadow-xs cursor-pointer"
+                className="px-5 py-2 rounded-lg text-xs font-bold bg-[#E50914] hover:bg-[#B91C1C] text-white shadow-xs cursor-pointer disabled:opacity-50"
               >
-                Tambahkan Kotak ke Halaman
+                {uploading ? "Sedang Mengompres..." : "Tambahkan Kotak ke Halaman"}
               </button>
             </div>
           </div>
@@ -1980,9 +2022,9 @@ export default function KoranClientManager({
                 </div>
               )}
 
-              {/* Image upload / URL */}
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">
+              {/* Image upload / URL with Live Preview & WebP status */}
+              <div className="space-y-2">
+                <label className="block font-bold text-stone-700">
                   Foto Gambar (Otomatis Kompresi WebP):
                 </label>
                 <div className="flex gap-2 items-center">
@@ -1990,9 +2032,10 @@ export default function KoranClientManager({
                     type="text"
                     value={formImage}
                     onChange={(e) => setFormImage(e.target.value)}
+                    placeholder="URL gambar atau unggah file di samping..."
                     className="flex-1 px-3 py-2 bg-white border border-stone-300 rounded-lg text-xs text-stone-900"
                   />
-                  <label className="px-3 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-lg text-stone-700 font-bold cursor-pointer transition-colors flex items-center gap-1.5">
+                  <label className="px-3 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-lg text-stone-700 font-bold cursor-pointer transition-colors flex items-center gap-1.5 shrink-0">
                     <Upload className="w-3.5 h-3.5" />
                     <span>{uploading ? "Mengompres..." : "Ganti Foto"}</span>
                     <input
@@ -2004,6 +2047,46 @@ export default function KoranClientManager({
                     />
                   </label>
                 </div>
+
+                {/* Live Preview Card */}
+                {formImage && (
+                  <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center gap-3">
+                    <div className="relative w-16 h-14 rounded-lg overflow-hidden border border-emerald-400 shrink-0 bg-white shadow-2xs">
+                      <img
+                        src={formImage}
+                        alt="Preview Foto"
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = "/images/ads/iklan-bunga.jpeg";
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1 text-emerald-800 font-bold text-xs">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>Foto Berhasil Diunggah &amp; Siap Ditampilkan</span>
+                      </div>
+                      <p className="text-[10px] text-stone-600 truncate mt-0.5 font-mono">
+                        {formImage}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormImage("")}
+                      className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-[10px] font-bold rounded-md transition-colors cursor-pointer shrink-0"
+                      title="Hapus foto ini"
+                    >
+                      Hapus
+                    </button>
+                  </div>
+                )}
+
+                {uploading && (
+                  <div className="p-2.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center gap-2 text-amber-900 text-xs font-bold animate-pulse">
+                    <RefreshCw className="w-4 h-4 animate-spin text-amber-600 shrink-0" />
+                    <span>Sedang memproses kompresi WebP &amp; mengunggah gambar...</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -2018,10 +2101,11 @@ export default function KoranClientManager({
               </button>
               <button
                 type="button"
+                disabled={uploading}
                 onClick={handleSaveEditBlock}
-                className="px-5 py-2 rounded-lg text-xs font-bold bg-[#E50914] hover:bg-[#B91C1C] text-white shadow-xs cursor-pointer"
+                className="px-5 py-2 rounded-lg text-xs font-bold bg-[#E50914] hover:bg-[#B91C1C] text-white shadow-xs cursor-pointer disabled:opacity-50"
               >
-                Simpan Perubahan
+                {uploading ? "Sedang Mengompres..." : "Simpan Perubahan"}
               </button>
             </div>
           </div>

@@ -42,6 +42,47 @@ interface NewspaperA4CanvasProps {
   onUpdateCoverVersion?: (pageIndex: number, version: "v1_lama" | "v2_baru") => void;
 }
 
+// Komponen gambar terdedikasi untuk koran: Eager loading, zero optimization failure, auto fallback
+function NewspaperMediaImage({
+  src,
+  alt,
+  className = "object-cover",
+  fallbackSrc = "/images/ads/iklan-bunga.jpeg",
+  style,
+}: {
+  src?: string;
+  alt: string;
+  className?: string;
+  fallbackSrc?: string;
+  style?: React.CSSProperties;
+}) {
+  const [currentSrc, setCurrentSrc] = useState<string>(src || fallbackSrc);
+
+  useEffect(() => {
+    if (src) {
+      setCurrentSrc(src);
+    } else {
+      setCurrentSrc(fallbackSrc);
+    }
+  }, [src, fallbackSrc]);
+
+  return (
+    <img
+      src={currentSrc}
+      alt={alt}
+      className={`w-full h-full block ${className}`}
+      loading="eager"
+      decoding="async"
+      style={style}
+      onError={() => {
+        if (currentSrc !== fallbackSrc) {
+          setCurrentSrc(fallbackSrc);
+        }
+      }}
+    />
+  );
+}
+
 function getColSpanClass(span: number): string {
   switch (span) {
     case 1:
@@ -404,14 +445,11 @@ export default function NewspaperA4Canvas({
             <header className="w-full shrink-0 mb-1 relative group">
               {/* Image-Only Newspaper Header Banner */}
               <div className="relative w-full border border-black overflow-hidden bg-white shadow-2xs">
-                <Image
+                <NewspaperMediaImage
                   src={data.masthead.image || "/images/header-koran-default.webp"}
                   alt="Header Koran Jurnal Polisi"
-                  width={1500}
-                  height={389}
                   className="w-full h-auto object-cover block"
-                  priority
-                  unoptimized
+                  fallbackSrc="/images/header-koran-default.webp"
                 />
 
                 {/* Edit Header Image Overlay (Only visible in Editor Mode on hover) */}
@@ -808,15 +846,13 @@ export default function NewspaperA4Canvas({
                     <div className="relative w-full flex-1 flex flex-col justify-end overflow-hidden p-2.5 min-h-[175px]">
                       {/* Photo Background */}
                       <div className="absolute inset-0">
-                        <Image
-                          src={block.image || "/images/ads/iklan-bunga.jpeg"}
+                        <NewspaperMediaImage
+                          src={block.image}
                           alt={block.name || block.title}
-                          fill
-                          sizes="500px"
                           className="object-cover object-top"
-                          priority
+                          fallbackSrc="/images/ads/iklan-bunga.jpeg"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent pointer-events-none" />
                       </div>
 
                       {/* Gold Emblem */}
@@ -862,14 +898,13 @@ export default function NewspaperA4Canvas({
                   {block.type === "photo_story" && (
                     <div className="relative w-full flex-1 flex flex-col justify-end overflow-hidden min-h-[70px]">
                       <div className="absolute inset-0">
-                        <Image
-                          src={block.image || "/images/ads/iklan-bunga.jpeg"}
+                        <NewspaperMediaImage
+                          src={block.image}
                           alt={block.title}
-                          fill
-                          sizes="300px"
                           className="object-cover"
+                          fallbackSrc="/images/ads/iklan-bunga.jpeg"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
                       </div>
                       <div
                         className={`relative z-10 p-1 border-t border-black ${
@@ -983,12 +1018,11 @@ export default function NewspaperA4Canvas({
                                 minHeight: "35px",
                               }}
                             >
-                              <Image
+                              <NewspaperMediaImage
                                 src={block.image}
                                 alt={block.title}
-                                fill
-                                sizes={isTop || isBottom ? "450px" : "200px"}
                                 className="object-cover"
+                                fallbackSrc="/images/ads/iklan-bunga.jpeg"
                               />
 
                               {/* Image Mouse Resize Handle */}
@@ -1040,12 +1074,11 @@ export default function NewspaperA4Canvas({
                     <div className="relative w-full flex-1 flex items-center justify-center overflow-hidden bg-amber-50 p-1 min-h-[50px]">
                       {block.image ? (
                         <div className="relative w-full h-full min-h-[50px]">
-                          <Image
+                          <NewspaperMediaImage
                             src={block.image}
                             alt={block.title}
-                            fill
-                            sizes="400px"
                             className="object-contain"
+                            fallbackSrc="/images/ads/iklan-bunga.jpeg"
                           />
                         </div>
                       ) : (
@@ -1069,12 +1102,11 @@ export default function NewspaperA4Canvas({
                       {/* 1. Header Masthead Logo in Black & White */}
                       <div className="relative w-full border border-black overflow-hidden bg-black mb-1 p-1 shrink-0">
                         <div className="relative w-full h-8 aspect-[329/92] mx-auto filter grayscale contrast-125">
-                          <Image
+                          <NewspaperMediaImage
                             src="/images/logo-hd.webp"
                             alt="Jurnal Polisi B&W"
-                            fill
-                            sizes="200px"
                             className="object-contain"
+                            fallbackSrc="/images/header-koran-default.webp"
                           />
                         </div>
                       </div>
@@ -1278,8 +1310,8 @@ export default function NewspaperA4Canvas({
         {renderPageSheet(currentPage, activePageIndex, false)}
       </div>
 
-      {/* PRINT VIEW: Render ALL pages sequentially for browser printing */}
-      <div className="hidden print:block print:w-full">
+      {/* PRINT VIEW: Pre-rendered in background so all compressed/uploaded images are decoded before print dialog */}
+      <div className="print-canvas-layer fixed -left-[99999px] -top-[99999px] opacity-0 pointer-events-none print:static print:left-auto print:top-auto print:opacity-100 print:pointer-events-auto print:block print:w-full">
         {data.pages.map((p, idx) => renderPageSheet(p, idx, true))}
       </div>
 
@@ -1294,7 +1326,9 @@ export default function NewspaperA4Canvas({
             visibility: hidden !important;
           }
           .newspaper-print-container,
-          .newspaper-print-container * {
+          .newspaper-print-container *,
+          .print-canvas-layer,
+          .print-canvas-layer * {
             visibility: visible !important;
           }
           .screen-only-canvas {
@@ -1307,6 +1341,15 @@ export default function NewspaperA4Canvas({
             width: 210mm !important;
             margin: 0 !important;
             padding: 0 !important;
+          }
+          .print-canvas-layer {
+            position: static !important;
+            left: auto !important;
+            top: auto !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+            width: 210mm !important;
+            display: block !important;
           }
           .print-only-page {
             width: 210mm !important;
