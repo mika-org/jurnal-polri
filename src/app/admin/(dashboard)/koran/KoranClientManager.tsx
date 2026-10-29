@@ -712,11 +712,11 @@ export default function KoranClientManager({
     const newBlock: NewspaperBlock = {
       id: `block-${Date.now()}`,
       type: formType,
-      title: formTitle || "Judul Kotak Berita",
+      title: formTitle || (formType === "redaksi_box" ? "BOKS SUSUNAN REDAKSI" : "Judul Kotak Berita"),
       content: formContent,
       image: formImage || undefined,
       colSpan: formColSpan,
-      textColumns: formTextColumns,
+      textColumns: formType === "redaksi_box" ? 1 : formTextColumns,
       imagePosition: formImagePosition,
       fontSize: formFontSize,
       greeting: formGreeting,
@@ -724,7 +724,7 @@ export default function KoranClientManager({
       position: formPosition,
       positionPrefix: formPositionPrefix,
       positionSub: formPositionSub,
-      themeColor: formThemeColor,
+      themeColor: formType === "redaksi_box" ? "white" : formThemeColor,
     };
 
     setNewspaperData((prev) => {
@@ -1343,17 +1343,25 @@ export default function KoranClientManager({
               {/* Type Selection */}
               <div>
                 <label className="block font-bold text-stone-700 mb-1">Tipe Kotak Section:</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
                   {[
                     { id: "text_columns", label: "Teks Kolom Koran", icon: Columns },
                     { id: "photo_story", label: "Berita Foto", icon: ImageIcon },
                     { id: "hero_greeting", label: "Banner Tokoh / Ucapan", icon: Shield },
                     { id: "ad_banner", label: "Slot Iklan Sponsor", icon: Sparkles },
+                    { id: "redaksi_box", label: "Boks Redaksi (Gambar 2)", icon: BookOpen },
                   ].map((t) => (
                     <button
                       key={t.id}
                       type="button"
-                      onClick={() => setFormType(t.id as NewspaperBlock["type"])}
+                      onClick={() => {
+                        setFormType(t.id as NewspaperBlock["type"]);
+                        if (t.id === "redaksi_box") {
+                          setFormColSpan(5);
+                          setFormTitle("BOKS SUSUNAN REDAKSI");
+                          setFormThemeColor("white");
+                        }
+                      }}
                       className={`p-2.5 rounded-lg border text-center font-bold text-[11px] flex flex-col items-center gap-1 transition-all cursor-pointer ${
                         formType === t.id
                           ? "bg-red-50 border-[#E50914] text-[#7F0000]"
@@ -1365,6 +1373,22 @@ export default function KoranClientManager({
                     </button>
                   ))}
                 </div>
+
+                {/* Info khusus Boks Susunan Redaksi Gambar 2 */}
+                {formType === "redaksi_box" && (
+                  <div className="mt-2.5 p-3 bg-stone-100 rounded-xl border border-stone-300 text-stone-700 text-xs space-y-1">
+                    <div className="font-bold text-stone-900 flex items-center gap-1.5">
+                      <BookOpen className="w-4 h-4 text-stone-700" />
+                      <span>Boks Susunan Redaksi (Format Resmi Cetak Koran Sesuai Gambar 2)</span>
+                    </div>
+                    <p className="text-[11px] leading-relaxed text-stone-600">
+                      Menyisipkan boks susunan redaksi resmi lengkap dengan logo hitam putih, legalitas pers (UU Pokok Pers No. 40/1999 &amp; Sertifikat Dewan Pers SPRI), hierarki Dewan Pembina s/d jajaran wartawan, dan kontak alamat redaksi pusat persis seperti pada <strong>Gambar 2</strong>.
+                    </p>
+                    <p className="text-[10px] text-stone-500 font-semibold">
+                      * Lebar otomatis diatur <strong>5 kolom</strong> agar berdampingan serasi dengan berita 7 kolom di sebelah kanan.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* ColSpan Width Selector */}
