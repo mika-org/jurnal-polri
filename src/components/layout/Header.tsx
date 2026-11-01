@@ -59,7 +59,7 @@ export default function Header({ categories = [] }: HeaderProps) {
             className="relative z-10 flex items-center shrink-0 py-1 focus:outline-none group"
             aria-label="Beranda Jurnal Polisi"
           >
-            <div className="relative h-[76px] min-[390px]:h-[80px] sm:h-[82px] lg:h-[86px] aspect-[329/92] group-hover:scale-[1.01] transition-transform">
+            <div className="relative h-[66px] min-[390px]:h-[72px] sm:h-[80px] lg:h-[86px] aspect-[329/92] group-hover:scale-[1.01] transition-transform">
               <Image
                 src="/images/logo-hd.webp"
                 alt="Jurnal Polisi - Media Mitra Polri & TNI"

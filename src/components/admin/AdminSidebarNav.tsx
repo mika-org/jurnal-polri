@@ -12,18 +12,19 @@ import {
   Users,
   Settings,
   Printer,
-  BookOpen,
   ChevronRight,
 } from "lucide-react";
 
 interface AdminSidebarNavProps {
   isSuperAdmin: boolean;
   isWartawan: boolean;
+  onNavigate?: () => void;
 }
 
 export default function AdminSidebarNav({
   isSuperAdmin,
   isWartawan,
+  onNavigate,
 }: AdminSidebarNavProps) {
   const pathname = usePathname();
 
@@ -75,9 +76,6 @@ export default function AdminSidebarNav({
           category: "Sistem & Pengaturan",
           items: [
             { label: "Pengguna & Akses", href: "/admin/pengguna", icon: Users },
-            ...(isSuperAdmin
-              ? [{ label: "Buku Tutorial", href: "/admin/tutorial", icon: BookOpen }]
-              : []),
             { label: "Pengaturan Portal", href: "/admin/pengaturan", icon: Settings },
           ],
         },
@@ -105,6 +103,7 @@ export default function AdminSidebarNav({
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={onNavigate}
                   className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                     isActive
                       ? "bg-gradient-to-r from-[#B91C1C] to-[#E50914] text-white shadow-lg shadow-red-950/60 border-l-4 border-amber-300 translate-x-1"

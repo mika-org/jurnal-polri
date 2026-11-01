@@ -1304,9 +1304,9 @@ export default function NewspaperA4Canvas({
   };
 
   return (
-    <div className="newspaper-print-container flex flex-col items-center">
+    <div className="newspaper-print-container flex flex-col items-center w-full max-w-full">
       {/* SCREEN VIEW: Render the currently active page */}
-      <div className="screen-only-canvas w-full flex justify-center overflow-x-auto pb-8">
+      <div className="screen-only-canvas w-full flex justify-start md:justify-center overflow-x-auto pb-8">
         {renderPageSheet(currentPage, activePageIndex, false)}
       </div>
 

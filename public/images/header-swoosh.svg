@@ -19,15 +19,15 @@
   <!-- Base Maroon Background -->
   <rect width="1600" height="110" fill="#7C0106" />
 
-  <!-- Layer 1: Vibrant Orange Wave spanning full width edge to edge -->
-  <path d="M 0,42 C 240,14 500,16 800,38 C 1100,60 1360,50 1600,65 L 1600,110 L 0,110 Z" 
+  <!-- Layer 1: Smooth Rainbow Arc - Vibrant Orange -->
+  <path d="M 0,70 C 420,6 1120,6 1600,56 L 1600,110 L 0,110 Z"
         fill="url(#orangeGrad)" />
 
-  <!-- Layer 2: Warm Peach Accent Ribbon spanning full width edge to edge -->
-  <path d="M 0,58 C 250,30 510,32 810,54 C 1110,76 1370,66 1600,80 L 1600,110 L 0,110 Z" 
+  <!-- Layer 2: Smooth Rainbow Arc - Warm Peach -->
+  <path d="M 0,84 C 420,20 1120,20 1600,70 L 1600,110 L 0,110 Z"
         fill="url(#peachGrad)" />
 
-  <!-- Layer 3: Clean White Wave spanning full width edge to edge -->
-  <path d="M 0,74 C 260,46 520,48 820,70 C 1120,90 1380,82 1600,94 L 1600,110 L 0,110 Z" 
+  <!-- Layer 3: Smooth Rainbow Arc - Clean White -->
+  <path d="M 0,98 C 420,34 1120,34 1600,84 L 1600,110 L 0,110 Z"
         fill="#FFFFFF" />
 </svg>

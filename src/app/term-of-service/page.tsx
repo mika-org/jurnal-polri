@@ -10,16 +10,17 @@ export const metadata = {
 };
 
 export default async function TermOfServicePage() {
-  const page = await prisma.halaman.findUnique({
-    where: { slug: "term-of-service" },
-  });
+  const [page, categories, settingsRows] = await Promise.all([
+    prisma.halaman.findUnique({
+      where: { slug: "term-of-service" },
+    }),
+    prisma.kategori.findMany({
+      where: { deleted_at: null },
+      orderBy: { urutan: "asc" },
+    }),
+    prisma.pengaturan.findMany(),
+  ]);
 
-  const categories = await prisma.kategori.findMany({
-    where: { deleted_at: null },
-    orderBy: { urutan: "asc" },
-  });
-
-  const settingsRows = await prisma.pengaturan.findMany();
   const settings = settingsRows.reduce<Record<string, string>>((acc, curr) => {
     acc[curr.kunci] = curr.nilai;
     return acc;

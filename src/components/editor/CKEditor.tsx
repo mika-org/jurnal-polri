@@ -1,8 +1,21 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import Script from "next/script";
-import { Loader2 } from "lucide-react";
+import {
+  Bold,
+  Italic,
+  Underline,
+  Link as LinkIcon,
+  List,
+  ListOrdered,
+  Indent,
+  Outdent,
+  Quote,
+  Table,
+  Undo2,
+  Redo2,
+  RemoveFormatting,
+} from "lucide-react";
 
 interface CKEditorProps {
   name: string;
@@ -11,192 +24,287 @@ interface CKEditorProps {
   placeholder?: string;
 }
 
-declare global {
-  interface Window {
-    ClassicEditor: {
-      create: (
-        element: HTMLElement,
-        config?: Record<string, unknown>
-      ) => Promise<{
-        getData: () => string;
-        setData: (data: string) => void;
-        destroy: () => Promise<void>;
-        model: {
-          document: {
-            on: (event: string, callback: () => void) => void;
-          };
-        };
-      }>;
-    };
-  }
-}
-
 export default function CKEditor({
   name,
   initialValue = "",
   onChange,
   placeholder = "Tulis isi berita atau naskah lengkap di sini...",
 }: CKEditorProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const editorInstanceRef = useRef<{
-    getData: () => string;
-    setData: (data: string) => void;
-    destroy: () => Promise<void>;
-  } | null>(null);
-
-  const [scriptLoaded, setScriptLoaded] = useState(false);
-  const [editorReady, setEditorReady] = useState(false);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const isInternalChange = useRef(false);
   const [value, setValue] = useState(initialValue);
+  const [headingValue, setHeadingValue] = useState("P");
 
-  // Initialize editor when script is loaded and container is available
+  // Set initial HTML on mount
   useEffect(() => {
-    if (!scriptLoaded || !containerRef.current || editorInstanceRef.current) return;
-
-    if (typeof window !== "undefined" && window.ClassicEditor) {
-      window.ClassicEditor.create(containerRef.current, {
-        placeholder,
-        toolbar: [
-          "heading",
-          "|",
-          "bold",
-          "italic",
-          "link",
-          "bulletedList",
-          "numberedList",
-          "|",
-          "outdent",
-          "indent",
-          "|",
-          "blockQuote",
-          "insertTable",
-          "undo",
-          "redo",
-        ],
-        heading: {
-          options: [
-            { model: "paragraph", title: "Paragraf Biasa", class: "ck-heading_paragraph" },
-            {
-              model: "heading2",
-              view: "h2",
-              title: "Judul Bagian (H2)",
-              class: "ck-heading_heading2",
-            },
-            {
-              model: "heading3",
-              view: "h3",
-              title: "Sub-judul (H3)",
-              class: "ck-heading_heading3",
-            },
-          ],
-        },
-      })
-        .then((editor) => {
-          editorInstanceRef.current = editor;
-          if (initialValue) {
-            editor.setData(initialValue);
-          }
-
-          editor.model.document.on("change:data", () => {
-            const data = editor.getData();
-            setValue(data);
-            if (onChange) onChange(data);
-          });
-
-          setEditorReady(true);
-        })
-        .catch((error) => {
-          console.error("Gagal menginisialisasi CKEditor 5:", error);
-        });
+    if (editorRef.current) {
+      editorRef.current.innerHTML = initialValue || "";
     }
+    setValue(initialValue || "");
+  }, []);
 
-    return () => {
-      if (editorInstanceRef.current) {
-        editorInstanceRef.current.destroy().catch(() => {});
-        editorInstanceRef.current = null;
-      }
-    };
-  }, [scriptLoaded, placeholder]);
-
-  // Keep editor content in sync if initialValue changes externally
+  // Sync external initialValue changes (e.g. switching static pages)
   useEffect(() => {
-    if (editorInstanceRef.current && initialValue !== undefined) {
-      const currentData = editorInstanceRef.current.getData();
-      if (currentData !== initialValue) {
-        editorInstanceRef.current.setData(initialValue);
-        setValue(initialValue);
-      }
+    if (isInternalChange.current) {
+      isInternalChange.current = false;
+      return;
+    }
+    if (editorRef.current && editorRef.current.innerHTML !== (initialValue || "")) {
+      editorRef.current.innerHTML = initialValue || "";
+      setValue(initialValue || "");
     }
   }, [initialValue]);
 
+  const emitChange = () => {
+    if (!editorRef.current) return;
+    const html = editorRef.current.innerHTML;
+    isInternalChange.current = true;
+    setValue(html);
+    if (onChange) onChange(html);
+  };
+
+  const exec = (command: string, arg?: string) => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand(command, false, arg);
+    emitChange();
+  };
+
+  const handleHeadingChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const tag = e.target.value;
+    setHeadingValue(tag);
+    exec("formatBlock", `<${tag}>`);
+  };
+
+  const handleInsertLink = () => {
+    const url = window.prompt("Masukkan alamat URL tautan:", "https://");
+    if (url && url.trim() && url !== "https://") {
+      exec("createLink", url.trim());
+    }
+  };
+
+  const handleInsertTable = () => {
+    const tableHtml = `
+      <table style="width:100%; border-collapse:collapse; margin:12px 0;">
+        <thead>
+          <tr>
+            <th style="border:1px solid #cbd5e1; padding:8px; background:#f8fafc; text-align:left;">Kolom 1</th>
+            <th style="border:1px solid #cbd5e1; padding:8px; background:#f8fafc; text-align:left;">Kolom 2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border:1px solid #cbd5e1; padding:8px;">Isi data 1</td>
+            <td style="border:1px solid #cbd5e1; padding:8px;">Isi data 2</td>
+          </tr>
+        </tbody>
+      </table>
+      <p><br/></p>
+    `;
+    exec("insertHTML", tableHtml);
+  };
+
   return (
     <div className="space-y-1 relative">
-      <Script
-        src="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/ckeditor.js"
-        strategy="afterInteractive"
-        onLoad={() => {
-          setScriptLoaded(true);
-        }}
-      />
-
       {/* Hidden input for form submission */}
       <input type="hidden" name={name} value={value} />
 
       {/* Editor Box */}
-      <div className="ckeditor-wrapper rounded-lg overflow-hidden border border-stone-200 bg-white focus-within:border-[#E50914] transition-colors shadow-xs">
-        {!editorReady && (
-          <div className="min-h-[260px] flex flex-col items-center justify-center gap-2 p-6 text-stone-500 bg-stone-50">
-            <Loader2 className="w-5 h-5 animate-spin text-red-500" />
-            <span className="text-xs">Memuat Formatter Visual (CKEditor 5)...</span>
-          </div>
-        )}
+      <div className="visual-editor-wrapper rounded-lg overflow-hidden border border-stone-200 bg-white focus-within:border-[#E50914] focus-within:ring-1 focus-within:ring-[#E50914] transition-all shadow-xs">
+        {/* Toolbar */}
+        <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-50 border-b border-slate-200 text-slate-700 select-none">
+          <select
+            value={headingValue}
+            onChange={handleHeadingChange}
+            aria-label="Pilih gaya teks"
+            className="text-xs font-semibold bg-white border border-slate-200 rounded-md px-2.5 py-1.5 text-slate-700 hover:border-slate-300 focus:outline-none focus:border-[#E50914] cursor-pointer"
+          >
+            <option value="P">Paragraf Biasa</option>
+            <option value="H2">Judul Bagian (H2)</option>
+            <option value="H3">Sub-judul (H3)</option>
+            <option value="H4">Sub-judul Kecil (H4)</option>
+          </select>
 
+          <span className="h-4 w-px bg-slate-200 mx-0.5" />
+
+          <button
+            type="button"
+            onClick={() => exec("bold")}
+            title="Tebal (Bold)"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <Bold className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => exec("italic")}
+            title="Miring (Italic)"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <Italic className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => exec("underline")}
+            title="Garis Bawah (Underline)"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <Underline className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertLink}
+            title="Sisipkan Tautan"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <LinkIcon className="w-3.5 h-3.5" />
+          </button>
+
+          <span className="h-4 w-px bg-slate-200 mx-0.5" />
+
+          <button
+            type="button"
+            onClick={() => exec("insertUnorderedList")}
+            title="Daftar Poin (Bullet List)"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <List className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => exec("insertOrderedList")}
+            title="Daftar Nomor (Numbered List)"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <ListOrdered className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => exec("outdent")}
+            title="Kurangi Indentasi"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <Outdent className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => exec("indent")}
+            title="Tambah Indentasi"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <Indent className="w-3.5 h-3.5" />
+          </button>
+
+          <span className="h-4 w-px bg-slate-200 mx-0.5" />
+
+          <button
+            type="button"
+            onClick={() => exec("formatBlock", "<BLOCKQUOTE>")}
+            title="Kutipan (Blockquote)"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <Quote className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={handleInsertTable}
+            title="Sisipkan Tabel"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <Table className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => exec("removeFormat")}
+            title="Bersihkan Format"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <RemoveFormatting className="w-3.5 h-3.5" />
+          </button>
+
+          <span className="h-4 w-px bg-slate-200 mx-0.5" />
+
+          <button
+            type="button"
+            onClick={() => exec("undo")}
+            title="Urungkan (Undo)"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <Undo2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => exec("redo")}
+            title="Ulangi (Redo)"
+            className="p-1.5 rounded hover:bg-slate-200/70 text-slate-700 transition-colors cursor-pointer"
+          >
+            <Redo2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Editable Area */}
         <div
-          ref={containerRef}
-          className={`${editorReady ? "block" : "hidden"} min-h-[260px]`}
+          ref={editorRef}
+          contentEditable
+          suppressContentEditableWarning
+          onInput={emitChange}
+          onBlur={emitChange}
+          data-placeholder={placeholder}
+          className="visual-editor-content min-h-[260px] max-h-[550px] overflow-y-auto p-4 sm:p-5 text-sm text-stone-900 leading-relaxed focus:outline-none"
         />
       </div>
 
       <style jsx global>{`
-        .ckeditor-wrapper .ck-editor__editable_inline {
-          min-height: 260px !important;
-          max-height: 550px !important;
-          overflow-y: auto !important;
-          background-color: #ffffff !important;
-          color: #1c1917 !important;
-          font-family: inherit !important;
-          font-size: 0.875rem !important;
-          line-height: 1.625 !important;
-          padding: 1rem 1.25rem !important;
+        .visual-editor-content:empty:before {
+          content: attr(data-placeholder);
+          color: #a8a29e;
+          pointer-events: none;
+          display: block;
         }
-        .ckeditor-wrapper .ck.ck-toolbar {
-          background-color: #f8fafc !important;
-          border-color: #e2e8f0 !important;
-          border-top-left-radius: 0.5rem !important;
-          border-top-right-radius: 0.5rem !important;
+        .visual-editor-content h2 {
+          font-size: 1.25rem;
+          font-weight: 800;
+          margin-top: 1rem;
+          margin-bottom: 0.5rem;
+          color: #1c1917;
         }
-        .ckeditor-wrapper .ck.ck-button {
-          color: #475569 !important;
-          cursor: pointer !important;
+        .visual-editor-content h3 {
+          font-size: 1.1rem;
+          font-weight: 700;
+          margin-top: 0.85rem;
+          margin-bottom: 0.4rem;
+          color: #1c1917;
         }
-        .ckeditor-wrapper .ck.ck-button:hover {
-          background-color: #f1f5f9 !important;
-          color: #0f172a !important;
+        .visual-editor-content h4 {
+          font-size: 0.95rem;
+          font-weight: 700;
+          margin-top: 0.75rem;
+          margin-bottom: 0.35rem;
+          color: #1c1917;
         }
-        .ckeditor-wrapper .ck.ck-button.ck-on {
-          background-color: #fee2e2 !important;
-          color: #b91c1c !important;
+        .visual-editor-content p {
+          margin-bottom: 0.75rem;
         }
-        .ckeditor-wrapper .ck.ck-dropdown__panel {
-          background-color: #ffffff !important;
-          border-color: #e2e8f0 !important;
-          box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+        .visual-editor-content ul {
+          list-style-type: disc;
+          padding-left: 1.5rem;
+          margin-bottom: 0.75rem;
         }
-        .ckeditor-wrapper .ck.ck-list__item .ck-button {
-          color: #334155 !important;
+        .visual-editor-content ol {
+          list-style-type: decimal;
+          padding-left: 1.5rem;
+          margin-bottom: 0.75rem;
         }
-        .ckeditor-wrapper .ck.ck-list__item .ck-button:hover {
-          background-color: #f1f5f9 !important;
-          color: #0f172a !important;
+        .visual-editor-content blockquote {
+          border-left: 4px solid #e50914;
+          padding-left: 1rem;
+          margin: 0.75rem 0;
+          color: #57534e;
+          font-style: italic;
+        }
+        .visual-editor-content a {
+          color: #e50914;
+          text-decoration: underline;
         }
       `}</style>
     </div>

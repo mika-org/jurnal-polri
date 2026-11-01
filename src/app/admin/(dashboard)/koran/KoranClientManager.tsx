@@ -1073,14 +1073,14 @@ export default function KoranClientManager({
         </div>
 
         {/* Current Page Settings Bar */}
-        <div className="pt-2 border-t border-stone-100 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="flex items-center gap-3 flex-wrap">
+        <div className="pt-2 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+          <div className="flex items-center gap-2.5 flex-wrap w-full">
             <span className="font-bold text-stone-800">
               Sedang Mengedit: Halaman {activePageIndex + 1} ({newspaperData.pages[activePageIndex]?.blocks.length || 0} Kotak Section)
             </span>
 
             {/* Quick Edit Judul Edisi Cover */}
-            <div className="flex items-center gap-1.5 bg-stone-50 px-2 py-0.5 rounded-lg border border-stone-200">
+            <div className="flex flex-wrap items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200 w-full sm:w-auto">
               <span className="text-stone-500 font-bold text-[10.5px] whitespace-nowrap">Judul Edisi:</span>
               <input
                 type="text"
@@ -1093,16 +1093,16 @@ export default function KoranClientManager({
                   }));
                 }}
                 placeholder="misal: EDISI OKTOBER 2026"
-                className="bg-white border border-stone-300 rounded px-2 py-0.5 text-xs font-black text-stone-900 focus:outline-none focus:ring-1 focus:ring-red-500 w-44 sm:w-48 uppercase"
+                className="bg-white border border-stone-300 rounded px-2 py-1 text-xs font-black text-stone-900 focus:outline-none focus:ring-1 focus:ring-red-500 flex-1 min-w-[140px] sm:w-48 uppercase"
                 title="Ketik untuk mengubah judul edisi langsung pada cover koran"
               />
             </div>
 
             {/* Cover: Pemilihan Format Gaya Versi Lama (Gambar 1) vs Versi Baru (Modern) */}
             {newspaperData.pages[activePageIndex]?.showCoverMasthead && (
-              <div className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-0.5 rounded-lg border border-stone-200">
+              <div className="flex flex-wrap items-center gap-1.5 bg-stone-50 p-2 rounded-lg border border-stone-200 w-full sm:w-auto">
                 <span className="text-stone-600 font-bold text-[10.5px] whitespace-nowrap">Format Cover:</span>
-                <div className="inline-flex rounded-md bg-stone-200 p-0.5 text-[10.5px] font-bold">
+                <div className="inline-flex flex-wrap rounded-md bg-stone-200 p-0.5 text-[10.5px] font-bold">
                   <button
                     type="button"
                     onClick={() => handleUpdateCoverVersion(activePageIndex, "v1_lama")}
@@ -1134,7 +1134,7 @@ export default function KoranClientManager({
                   <button
                     type="button"
                     onClick={() => handleApplyCoverV1Lama(activePageIndex)}
-                    className="px-2 py-0.5 rounded bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1"
+                    className="px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1"
                     title="Muat susunan kotak section khas Versi Lama (Gambar 1)"
                   >
                     <Sparkles className="w-2.5 h-2.5 text-blue-600" />
@@ -1144,7 +1144,7 @@ export default function KoranClientManager({
                   <button
                     type="button"
                     onClick={() => handleApplyCoverV2Baru(activePageIndex)}
-                    className="px-2 py-0.5 rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1"
+                    className="px-2 py-1 rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1"
                     title="Muat susunan kotak section modern Versi Baru"
                   >
                     <Sparkles className="w-2.5 h-2.5 text-orange-600" />
@@ -1156,19 +1156,21 @@ export default function KoranClientManager({
 
             {/* Sub-Page: Edit Judul Header Halaman Per Halaman (Sesuai Gambar 2) */}
             {!newspaperData.pages[activePageIndex]?.showCoverMasthead && (
-              <div className="flex items-center gap-1.5 bg-stone-50 px-2.5 py-0.5 rounded-lg border border-stone-200">
-                <span className="text-stone-600 font-bold text-[10.5px] whitespace-nowrap flex items-center gap-1">
-                  <Edit className="w-3 h-3 text-red-600" />
-                  <span>Judul Header Halaman:</span>
-                </span>
-                <input
-                  type="text"
-                  value={newspaperData.pages[activePageIndex]?.runningHeader ?? "JENDELA REDAKSI"}
-                  onChange={(e) => handleUpdatePageHeader(activePageIndex, e.target.value)}
-                  placeholder="misal: JENDELA REDAKSI"
-                  className="bg-white border border-stone-300 rounded px-2 py-0.5 text-xs font-black text-stone-900 focus:outline-none focus:ring-1 focus:ring-red-500 w-36 sm:w-44 uppercase"
-                  title="Ketik untuk mengubah judul header di atas halaman ini (seperti pada Gambar 2)"
-                />
+              <div className="flex flex-wrap items-center gap-2 bg-stone-50 p-2 rounded-lg border border-stone-200 w-full sm:w-auto">
+                <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  <span className="text-stone-600 font-bold text-[10.5px] whitespace-nowrap flex items-center gap-1">
+                    <Edit className="w-3 h-3 text-red-600 shrink-0" />
+                    <span>Judul Header Halaman:</span>
+                  </span>
+                  <input
+                    type="text"
+                    value={newspaperData.pages[activePageIndex]?.runningHeader ?? "JENDELA REDAKSI"}
+                    onChange={(e) => handleUpdatePageHeader(activePageIndex, e.target.value)}
+                    placeholder="misal: JENDELA REDAKSI"
+                    className="bg-white border border-stone-300 rounded px-2 py-1 text-xs font-black text-stone-900 focus:outline-none focus:ring-1 focus:ring-red-500 flex-1 min-w-[120px] sm:w-44 uppercase"
+                    title="Ketik untuk mengubah judul header di atas halaman ini (seperti pada Gambar 2)"
+                  />
+                </div>
 
                 {/* Quick preset chips */}
                 <div className="hidden lg:flex items-center gap-1">
@@ -1195,25 +1197,27 @@ export default function KoranClientManager({
                 </div>
 
                 {/* Tombol Format Klasik Gambar 2 & Tambah Boks Redaksi */}
-                <button
-                  type="button"
-                  onClick={() => handleApplyPage2FormatLama(activePageIndex)}
-                  className="px-2 py-0.5 rounded bg-stone-900 hover:bg-black text-amber-300 border border-amber-400/50 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1"
-                  title="Terapkan susunan Halaman Isi Klasik Hitam Putih (Boks Susunan Redaksi + 2 Berita Kolom sesuai Gambar 2)"
-                >
-                  <BookOpen className="w-2.5 h-2.5 text-amber-400" />
-                  <span>Format Gambar 2 (Jendela Redaksi B&amp;W)</span>
-                </button>
+                <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => handleApplyPage2FormatLama(activePageIndex)}
+                    className="px-2.5 py-1 rounded bg-stone-900 hover:bg-black text-amber-300 border border-amber-400/50 text-[10px] font-bold cursor-pointer transition-all inline-flex items-center gap-1"
+                    title="Terapkan susunan Halaman Isi Klasik Hitam Putih (Boks Susunan Redaksi + 2 Berita Kolom sesuai Gambar 2)"
+                  >
+                    <BookOpen className="w-3 h-3 text-amber-400 shrink-0" />
+                    <span>Format Gambar 2 (Jendela Redaksi B&amp;W)</span>
+                  </button>
 
-                <button
-                  type="button"
-                  onClick={() => handleInsertRedaksiBox(activePageIndex)}
-                  className="px-2 py-0.5 rounded bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1 shadow-2xs"
-                  title="Tambahkan Boks Susunan Redaksi Resmi (sesuai Gambar 2) ke halaman ini"
-                >
-                  <Plus className="w-2.5 h-2.5 text-stone-600" />
-                  <span>+ Boks Redaksi</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInsertRedaksiBox(activePageIndex)}
+                    className="px-2.5 py-1 rounded bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 text-[10px] font-bold cursor-pointer transition-all inline-flex items-center gap-1 shadow-2xs"
+                    title="Tambahkan Boks Susunan Redaksi Resmi (sesuai Gambar 2) ke halaman ini"
+                  >
+                    <Plus className="w-3 h-3 text-stone-600 shrink-0" />
+                    <span>+ Boks Redaksi</span>
+                  </button>
+                </div>
               </div>
             )}
 
@@ -1285,7 +1289,7 @@ export default function KoranClientManager({
       {/* ========================================================= */}
       {/* 3. A4 INTERACTIVE VISUAL CANVAS */}
       {/* ========================================================= */}
-      <div className="bg-stone-200/70 p-6 rounded-2xl border border-stone-300 overflow-x-auto flex justify-center">
+      <div className="bg-stone-200/70 p-2 sm:p-6 rounded-2xl border border-stone-300 overflow-x-auto">
         <NewspaperA4Canvas
           data={newspaperData}
           activePageIndex={activePageIndex}

@@ -158,7 +158,6 @@ export default function HalamanClientManager({ pages }: { pages: PageData[] }) {
             {editorMode === "VISUAL" ? (
               <div className="space-y-1">
                 <CKEditor
-                  key={selectedSlug}
                   name="konten_editor"
                   initialValue={konten}
                   onChange={(val) => setKonten(val)}
@@ -183,6 +182,23 @@ export default function HalamanClientManager({ pages }: { pages: PageData[] }) {
                 </p>
               </div>
             )}
+          </div>
+
+          <div className="pt-3 border-t border-stone-100 flex justify-end">
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-[#E50914] hover:bg-[#B91C1C] text-white px-6 py-2.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer disabled:opacity-50"
+            >
+              {loading ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : savedSuccess ? (
+                <Check className="w-4 h-4 text-emerald-300" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              <span>{savedSuccess ? "Tersimpan!" : "Simpan Perubahan"}</span>
+            </button>
           </div>
         </form>
       </div>
