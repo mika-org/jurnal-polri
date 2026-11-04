@@ -16,6 +16,19 @@ export interface NewspaperBlock {
   category?: string;
   badge?: string;
   themeColor?: "blue" | "orange" | "red" | "dark" | "gold" | "white";
+  borderColor?: string; // Warna border kotak (hex)
+  borderWidth?: number; // Tebal border (px)
+  radius?: number; // Radius sudut kotak (px)
+  textFont?: string; // Font teks (font-family)
+  textSize?: number; // Ukuran teks naskah (px), menimpa fontSize preset
+  textColor?: string; // Warna teks (hex)
+  textBgColor?: string; // Warna latar teks (hex)
+  textAlign?: "left" | "center" | "right" | "justify";
+  imageFit?: "fill" | "fit" | "stretch"; // Isi (cover) / Pas (contain) / Tarik (stretch)
+  imageGrayscale?: boolean;
+  imageFlipV?: boolean;
+  imageFlipH?: boolean;
+  customColor?: string; // Warna latar kustom (hex #RRGGBB), menimpa themeColor
   imageWidth?: number; // Lebar gambar kustom dalam pixel
   imageHeight?: number; // Tinggi gambar kustom dalam pixel
   imagePosition?: "left" | "right" | "top" | "bottom"; // Tata letak posisi gambar terhadap teks

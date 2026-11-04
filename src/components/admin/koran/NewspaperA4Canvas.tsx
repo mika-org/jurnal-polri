@@ -35,7 +35,8 @@ interface NewspaperA4CanvasProps {
   onDeleteBlock: (pageIndex: number, blockId: string) => void;
   onReorderBlocks: (pageIndex: number, sourceIndex: number, destinationIndex: number) => void;
   onOpenAddModal: (pageIndex: number, defaultSpan?: number) => void;
-  onOpenEditModal: (pageIndex: number, block: NewspaperBlock) => void;
+  onOpenEditModal: (pageIndex: number, block: NewspaperBlock, target?: "block" | "text" | "image") => void;
+  selectedBlockId?: string | null;
   onOpenHeaderModal?: () => void;
   onAddBlock?: (pageIndex: number, block: NewspaperBlock) => void;
   onUpdatePageHeader?: (pageIndex: number, newHeader: string) => void;
@@ -123,6 +124,7 @@ export default function NewspaperA4Canvas({
   onReorderBlocks,
   onOpenAddModal,
   onOpenEditModal,
+  selectedBlockId,
   onOpenHeaderModal,
   onAddBlock,
   onUpdatePageHeader,
@@ -632,6 +634,46 @@ export default function NewspaperA4Canvas({
               // Tailored Tailwind col-span classes
               const colClass = getColSpanClass(block.colSpan);
 
+              // Warna latar kustom (hex) menimpa tema preset
+              const cc =
+                block.customColor && /^#[0-9a-fA-F]{6}$/.test(block.customColor)
+                  ? block.customColor
+                  : undefined;
+              const ccLum = cc
+                ? (parseInt(cc.slice(1, 3), 16) * 299 +
+                    parseInt(cc.slice(3, 5), 16) * 587 +
+                    parseInt(cc.slice(5, 7), 16) * 114) /
+                  1000
+                : 255;
+              const ccText = ccLum < 140 ? "#ffffff" : "#111827";
+
+              // Gaya teks & gambar kustom dari inspector
+              const titleStyle: React.CSSProperties = {
+                ...(block.textColor ? { color: block.textColor } : {}),
+                ...(block.textFont ? { fontFamily: block.textFont } : {}),
+                ...(block.textAlign ? { textAlign: block.textAlign } : {}),
+                ...(block.textBgColor ? { backgroundColor: block.textBgColor } : {}),
+                ...(block.textSize ? { fontSize: `${block.textSize + 1.5}px` } : {}),
+              };
+              const bodyStyle: React.CSSProperties = {
+                ...(block.textColor ? { color: block.textColor } : {}),
+                ...(block.textFont ? { fontFamily: block.textFont } : {}),
+                ...(block.textAlign ? { textAlign: block.textAlign } : {}),
+                ...(block.textBgColor ? { backgroundColor: block.textBgColor } : {}),
+                ...(block.textSize ? { fontSize: `${block.textSize}px`, lineHeight: 1.3 } : {}),
+              };
+              const imgFitClass =
+                block.imageFit === "fit"
+                  ? "object-contain"
+                  : block.imageFit === "stretch"
+                  ? "object-fill"
+                  : "object-cover";
+              const imgTransform = `${block.imageFlipV ? "scaleY(-1) " : ""}${block.imageFlipH ? "scaleX(-1)" : ""}`.trim();
+              const imgStyle: React.CSSProperties = {
+                ...(block.imageGrayscale ? { filter: "grayscale(1)" } : {}),
+                ...(imgTransform ? { transform: imgTransform } : {}),
+              };
+
               return (
                 <div
                   key={block.id || bIdx}
@@ -640,11 +682,18 @@ export default function NewspaperA4Canvas({
                   onDragOver={(e) => handleDragOver(e, bIdx)}
                   onDrop={(e) => handleDrop(e, bIdx)}
                   onDragEnd={handleDragEnd}
+                  onClick={(e) => {
+                    if (!isEditorMode || isPrintTarget) return;
+                    const el = e.target as HTMLElement;
+                    if (el.closest("button, input, textarea, a, label")) return;
+                    const part = el.closest("[data-part]")?.getAttribute("data-part");
+                    onOpenEditModal(pageIdx, block, part === "text" || part === "image" ? part : "block");
+                  }}
                   className={`newspaper-block-card ${colClass} relative rounded-xs border border-black overflow-hidden flex flex-col justify-between ${
                     resizing ? "" : "transition-all"
                   } group ${
                     isDragging ? "opacity-30 scale-95" : ""
-                  } ${isOver ? "ring-2 ring-red-600 border-red-600 scale-[1.01]" : ""} ${
+                  } ${isOver ? "ring-2 ring-red-600 border-red-600 scale-[1.01]" : ""} ${isEditorMode && !isPrintTarget && selectedBlockId === block.id ? "ring-2 ring-blue-500 ring-offset-1" : ""} ${
                     block.themeColor === "dark"
                       ? "bg-stone-900 text-white"
                       : block.themeColor === "orange"
@@ -656,6 +705,10 @@ export default function NewspaperA4Canvas({
                       : "bg-white text-stone-900"
                   }`}
                   style={{
+                    ...(cc ? { backgroundColor: cc, color: ccText } : {}),
+                    ...(block.borderColor ? { borderColor: block.borderColor } : {}),
+                    ...(block.borderWidth !== undefined ? { borderWidth: `${block.borderWidth}px` } : {}),
+                    ...(block.radius !== undefined ? { borderRadius: `${block.radius}px` } : {}),
                     alignSelf: "start",
                     height: block.customHeight ? `${block.customHeight}px` : "fit-content",
                     maxHeight: block.customHeight ? `${block.customHeight}px` : undefined,
@@ -845,11 +898,12 @@ export default function NewspaperA4Canvas({
                   {block.type === "hero_greeting" && (
                     <div className="relative w-full flex-1 flex flex-col justify-end overflow-hidden p-2.5 min-h-[175px]">
                       {/* Photo Background */}
-                      <div className="absolute inset-0">
+                      <div className="absolute inset-0" data-part="image">
                         <NewspaperMediaImage
                           src={block.image}
                           alt={block.name || block.title}
-                          className="object-cover object-top"
+                          style={imgStyle}
+                          className={`${imgFitClass} object-top`}
                           fallbackSrc="/images/ads/iklan-bunga.jpeg"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent pointer-events-none" />
@@ -863,7 +917,7 @@ export default function NewspaperA4Canvas({
                       </div>
 
                       {/* Caption */}
-                      <div className="relative z-10 text-center space-y-0.5">
+                      <div className="relative z-10 text-center space-y-0.5" data-part="text">
                         <p
                           className="font-serif italic text-amber-300 text-xl font-bold tracking-wide drop-shadow-md"
                           style={{ fontFamily: "Georgia, serif" }}
@@ -897,18 +951,23 @@ export default function NewspaperA4Canvas({
                   {/* ───────────────────────────────────────────────────────── */}
                   {block.type === "photo_story" && (
                     <div className="relative w-full flex-1 flex flex-col justify-end overflow-hidden min-h-[70px]">
-                      <div className="absolute inset-0">
+                      <div className="absolute inset-0" data-part="image">
                         <NewspaperMediaImage
                           src={block.image}
                           alt={block.title}
-                          className="object-cover"
+                          style={imgStyle}
+                          className={imgFitClass}
                           fallbackSrc="/images/ads/iklan-bunga.jpeg"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-transparent pointer-events-none" />
                       </div>
                       <div
+                        data-part="text"
+                        style={cc ? { backgroundColor: cc } : undefined}
                         className={`relative z-10 p-1 border-t border-black ${
-                          block.themeColor === "blue"
+                          cc
+                            ? "text-white"
+                            : block.themeColor === "blue"
                             ? "bg-[#0B3C5D]/90 backdrop-blur-xs text-white"
                             : block.themeColor === "orange"
                             ? "bg-[#E65100]/90 backdrop-blur-xs text-white"
@@ -917,7 +976,7 @@ export default function NewspaperA4Canvas({
                             : "bg-black/85 backdrop-blur-xs text-white"
                         }`}
                       >
-                        <p className="text-[8px] font-serif font-bold text-white line-clamp-2 leading-tight drop-shadow-xs">
+                        <p className="text-[8px] font-serif font-bold text-white line-clamp-2 leading-tight drop-shadow-xs" style={{ ...(cc ? { color: ccText } : {}), ...titleStyle }}>
                           {block.title}
                         </p>
                       </div>
@@ -947,8 +1006,11 @@ export default function NewspaperA4Canvas({
 
                     return (
                       <div
+                        style={cc ? { backgroundColor: cc, color: ccText } : undefined}
                         className={`flex flex-col justify-between overflow-hidden flex-1 w-full ${
-                          isBlueTheme
+                          cc
+                            ? ""
+                            : isBlueTheme
                             ? "bg-[#D6EEFC] text-stone-950"
                             : isOrangeTheme
                             ? "bg-[#FFF9F2] text-stone-900"
@@ -960,33 +1022,42 @@ export default function NewspaperA4Canvas({
                         }`}
                       >
                         {/* Title Bar: Bedakan Versi Lama (Gambar 1: Kotak Biru Klasik) vs Versi Baru (Oranye) vs Putih (Gambar 2) */}
-                        {isBlueTheme ? (
+                        {cc ? (
+                          <div
+                            className="border-b border-black px-2 py-1 shrink-0"
+                            style={{ backgroundColor: cc, filter: "brightness(0.92)" }}
+                          >
+                            <h3 data-part="text" className="font-serif font-black text-[9.5px] line-clamp-2 leading-tight uppercase tracking-tight" style={{ color: ccText, ...titleStyle }}>
+                              {block.title}
+                            </h3>
+                          </div>
+                        ) : isBlueTheme ? (
                           <div className="bg-[#85BDE6] border-b border-black px-2 py-1 shrink-0">
-                            <h3 className="font-serif font-black text-[9.5px] text-black line-clamp-2 leading-tight uppercase tracking-tight">
+                            <h3 data-part="text" style={titleStyle} className="font-serif font-black text-[9.5px] text-black line-clamp-2 leading-tight uppercase tracking-tight">
                               {block.title}
                             </h3>
                           </div>
                         ) : isOrangeTheme ? (
                           <div className="bg-[#FA9805] border-b border-black p-1 shrink-0">
-                            <h3 className="font-serif font-extrabold text-[9px] text-stone-900 line-clamp-2 leading-tight uppercase">
+                            <h3 data-part="text" style={titleStyle} className="font-serif font-extrabold text-[9px] text-stone-900 line-clamp-2 leading-tight uppercase">
                               {block.title}
                             </h3>
                           </div>
                         ) : isRedTheme ? (
                           <div className="bg-red-700 border-b border-black p-1 shrink-0">
-                            <h3 className="font-serif font-extrabold text-[9px] text-white line-clamp-2 leading-tight uppercase">
+                            <h3 data-part="text" style={titleStyle} className="font-serif font-extrabold text-[9px] text-white line-clamp-2 leading-tight uppercase">
                               {block.title}
                             </h3>
                           </div>
                         ) : isDarkTheme ? (
                           <div className="bg-black border-b border-stone-800 p-1 shrink-0">
-                            <h3 className="font-serif font-extrabold text-[9px] text-amber-300 line-clamp-2 leading-tight uppercase">
+                            <h3 data-part="text" style={titleStyle} className="font-serif font-extrabold text-[9px] text-amber-300 line-clamp-2 leading-tight uppercase">
                               {block.title}
                             </h3>
                           </div>
                         ) : (
                           <div className="bg-white border-b border-black px-2 py-1 shrink-0 text-center">
-                            <h3 className="font-serif font-black text-[9.5px] text-black line-clamp-2 leading-snug">
+                            <h3 data-part="text" style={titleStyle} className="font-serif font-black text-[9.5px] text-black line-clamp-2 leading-snug">
                               {block.title}
                             </h3>
                           </div>
@@ -1006,6 +1077,7 @@ export default function NewspaperA4Canvas({
                         >
                           {block.image && (
                             <div
+                              data-part="image"
                               className={`relative shrink-0 rounded-xs overflow-hidden border border-black bg-stone-200 group/img ${
                                 isTop || isBottom ? "w-full" : ""
                               }`}
@@ -1021,7 +1093,8 @@ export default function NewspaperA4Canvas({
                               <NewspaperMediaImage
                                 src={block.image}
                                 alt={block.title}
-                                className="object-cover"
+                                style={imgStyle}
+                                className={imgFitClass}
                                 fallbackSrc="/images/ads/iklan-bunga.jpeg"
                               />
 
@@ -1053,7 +1126,10 @@ export default function NewspaperA4Canvas({
                           {/* Text Flow: Multi-column or Single, dynamically filling all remaining space */}
                           <div
                             className={`flex-1 w-full font-serif ${fontClass} text-justify text-stone-900 overflow-hidden min-h-0`}
+                            data-part="text"
                             style={{
+                              ...(cc ? { color: ccText } : {}),
+                              ...bodyStyle,
                               columnCount: block.textColumns || (isTop || isBottom ? 2 : 1),
                               columnGap: "6px",
                               columnRule: "1px dotted #ccc",
@@ -1071,7 +1147,7 @@ export default function NewspaperA4Canvas({
                   {/* BLOCK VARIANT 4: AD BANNER / SPONSOR */}
                   {/* ───────────────────────────────────────────────────────── */}
                   {block.type === "ad_banner" && (
-                    <div className="relative w-full flex-1 flex items-center justify-center overflow-hidden bg-amber-50 p-1 min-h-[50px]">
+                    <div className={`relative w-full flex-1 flex items-center justify-center overflow-hidden p-1 min-h-[50px] ${cc ? "" : "bg-amber-50"}`} style={cc ? { backgroundColor: cc } : undefined}>
                       {block.image ? (
                         <div className="relative w-full h-full min-h-[50px]">
                           <NewspaperMediaImage
@@ -1098,7 +1174,7 @@ export default function NewspaperA4Canvas({
                   {/* BLOCK VARIANT 5: BOKS SUSUNAN REDAKSI (Koran Klasik Sesuai Gambar 2) */}
                   {/* ───────────────────────────────────────────────────────── */}
                   {(block.type === "redaksi_box" || block.id.includes("redaksi-box") || block.title.toLowerCase().includes("susunan redaksi")) && (
-                    <div className="flex flex-col bg-white border border-black p-1.5 h-full overflow-hidden text-black font-sans select-text justify-between">
+                    <div className={`flex flex-col border border-black p-1.5 h-full overflow-hidden text-black font-sans select-text justify-between ${cc ? "" : "bg-white"}`} style={cc ? { backgroundColor: cc } : undefined}>
                       {/* 1. Header Masthead Logo in Black & White */}
                       <div className="relative w-full border border-black overflow-hidden bg-black mb-1 p-1 shrink-0">
                         <div className="relative w-full h-8 aspect-[329/92] mx-auto filter grayscale contrast-125">

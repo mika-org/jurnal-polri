@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useTransition } from "react";
+import React, { useState, useTransition, useRef, useEffect } from "react";
 import Image from "next/image";
 import {
   Printer,
@@ -27,6 +27,19 @@ import {
   ImageIcon,
   Shield,
   BookOpen,
+  Undo2,
+  Redo2,
+  Eye,
+  Download,
+  ArrowLeft,
+  Minus,
+  MousePointer2,
+  ChevronUp,
+  ChevronDown,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  AlignJustify,
 } from "lucide-react";
 import NewspaperA4Canvas from "@/components/admin/koran/NewspaperA4Canvas";
 import ConfirmDialog from "@/components/admin/ConfirmDialog";
@@ -101,6 +114,7 @@ export default function KoranClientManager({
     block: NewspaperBlock;
   } | null>(null);
 
+  const [editTarget, setEditTarget] = useState<"block" | "text" | "image">("block");
   const [isPortalPickerOpen, setIsPortalPickerOpen] = useState<boolean>(false);
 
   // Header Image Configuration State (Khusus Memasukkan Gambar Header Saja)
@@ -178,6 +192,7 @@ export default function KoranClientManager({
   const [formPositionPrefix, setFormPositionPrefix] = useState("");
   const [formPositionSub, setFormPositionSub] = useState("");
   const [formThemeColor, setFormThemeColor] = useState<NewspaperBlock["themeColor"]>("orange");
+  const [formCustomColor, setFormCustomColor] = useState<string>("");
 
   // Handle Print all pages
   const handlePrint = () => {
@@ -680,12 +695,18 @@ export default function KoranClientManager({
     setFormPositionPrefix("SEBAGAI");
     setFormPositionSub("");
     setFormThemeColor("orange");
+    setFormCustomColor("");
 
     setIsAddModalOpen({ pageIndex: pageIdx, defaultSpan });
   };
 
   // Open Edit Block Modal
-  const handleOpenEditModal = (pageIdx: number, block: NewspaperBlock) => {
+  const handleOpenEditModal = (
+    pageIdx: number,
+    block: NewspaperBlock,
+    target: "block" | "text" | "image" = "block"
+  ) => {
+    setEditTarget(target);
     setFormType(block.type);
     setFormTitle(block.title || "");
     setFormContent(block.content || "");
@@ -700,6 +721,7 @@ export default function KoranClientManager({
     setFormPositionPrefix(block.positionPrefix || "SEBAGAI");
     setFormPositionSub(block.positionSub || "");
     setFormThemeColor(block.themeColor || "orange");
+    setFormCustomColor(block.customColor || "");
 
     setEditingBlock({ pageIndex: pageIdx, block });
   };
@@ -725,6 +747,7 @@ export default function KoranClientManager({
       positionPrefix: formPositionPrefix,
       positionSub: formPositionSub,
       themeColor: formType === "redaksi_box" ? "white" : formThemeColor,
+      customColor: formCustomColor || undefined,
     };
 
     setNewspaperData((prev) => {
@@ -762,6 +785,7 @@ export default function KoranClientManager({
       positionPrefix: formPositionPrefix,
       positionSub: formPositionSub,
       themeColor: formThemeColor,
+      customColor: formCustomColor || undefined,
       customHeight: block.customHeight,
       imageWidth: block.imageWidth,
       imageHeight: block.imageHeight,
@@ -803,96 +827,570 @@ export default function KoranClientManager({
     if (formType === "hero_greeting") {
       setFormName(art.judul);
     }
+    if (editingBlock) {
+      handleUpdateBlock(editingBlock.pageIndex, editingBlock.block.id, {
+        title: art.judul,
+        content: art.ringkasan,
+        image: art.gambar_sampul,
+      });
+    }
     setIsPortalPickerOpen(false);
   };
 
-  return (
-    <div className="space-y-6">
-      {/* ========================================================= */}
-      {/* 1. TOP HEADER BANNER CARD */}
-      {/* ========================================================= */}
-      <div className="bg-white p-5 rounded-xl border border-stone-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-lg bg-red-50 text-[#7F0000] border border-red-200">
-              <Newspaper className="w-5 h-5" />
-            </span>
-            <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
-              Pusat Desain &amp; Cetak Koran PDF Lembar A4
-            </h1>
+  // ===== Editor shell state (selection, undo/redo, layers) =====
+  const [hist, setHist] = useState<{ past: string[]; future: string[] }>({ past: [], future: [] });
+  const currentSnapRef = useRef<string>(JSON.stringify(newspaperData));
+  const skipHistRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    const snap = JSON.stringify(newspaperData);
+    if (snap === currentSnapRef.current) return;
+    const prevSnap = currentSnapRef.current;
+    currentSnapRef.current = snap;
+    if (skipHistRef.current) {
+      skipHistRef.current = false;
+      return;
+    }
+    setHist((h) => ({ past: [...h.past, prevSnap].slice(-50), future: [] }));
+  }, [newspaperData]);
+
+  const handleUndo = () => {
+    if (hist.past.length === 0) return;
+    const prev = hist.past[hist.past.length - 1];
+    setHist({ past: hist.past.slice(0, -1), future: [currentSnapRef.current, ...hist.future] });
+    skipHistRef.current = true;
+    setNewspaperData(JSON.parse(prev));
+  };
+
+  const handleRedo = () => {
+    if (hist.future.length === 0) return;
+    const next = hist.future[0];
+    setHist({ past: [...hist.past, currentSnapRef.current], future: hist.future.slice(1) });
+    skipHistRef.current = true;
+    setNewspaperData(JSON.parse(next));
+  };
+
+  const activePage = newspaperData.pages[activePageIndex];
+  const activeCoverVersion =
+    activePage?.coverVersion || newspaperData.masthead.coverVersion || "v1_lama";
+
+  const handleMoveLayer = (idx: number, dir: -1 | 1) => {
+    const dest = idx + dir;
+    if (!activePage || dest < 0 || dest >= activePage.blocks.length) return;
+    handleReorderBlocks(activePageIndex, idx, dest);
+  };
+
+  const BLOCK_TYPE_LABEL: Record<NewspaperBlock["type"], string> = {
+    hero_greeting: "Banner Tokoh",
+    article: "Artikel",
+    photo_story: "Berita Foto",
+    text_columns: "Teks Kolom",
+    ad_banner: "Iklan",
+    redaksi_box: "Boks Redaksi",
+  };
+
+  const THEME_SWATCH: Record<NonNullable<NewspaperBlock["themeColor"]>, string> = {
+    blue: "#BFE3F2",
+    orange: "#F97316",
+    red: "#E50914",
+    dark: "#111827",
+    gold: "#F5C518",
+    white: "#FFFFFF",
+  };
+
+  const sectionLabel = "text-[10.5px] font-bold uppercase tracking-wider text-stone-500";
+  const ghostBtn =
+    "inline-flex items-center justify-center gap-1.5 rounded-lg border border-stone-200 bg-white hover:bg-stone-50 text-stone-800 text-xs font-semibold px-3 py-2 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed";
+  const chipCls = (active: boolean) =>
+    `py-1.5 rounded-md border text-[11px] font-bold cursor-pointer ${
+      active
+        ? "bg-[#7F0000] text-white border-[#7F0000]"
+        : "bg-white text-stone-700 border-stone-200 hover:bg-stone-50"
+    }`;
+
+  const renderToggle = (checked: boolean, onChange: () => void) => (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={onChange}
+      className={`relative w-9 h-5 rounded-full transition-colors cursor-pointer ${
+        checked ? "bg-[#7F0000]" : "bg-stone-300"
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+          checked ? "translate-x-4" : ""
+        }`}
+      />
+    </button>
+  );
+
+  // Terapkan warna langsung (live) ke blok yang sedang disunting
+  const applyCustomColor = (v: string) => {
+    setFormCustomColor(v);
+    if (editingBlock && (v === "" || /^#[0-9a-fA-F]{6}$/.test(v))) {
+      handleUpdateBlock(editingBlock.pageIndex, editingBlock.block.id, {
+        customColor: v || undefined,
+      });
+    }
+  };
+
+  const applyThemePreset = (c: NewspaperBlock["themeColor"]) => {
+    setFormThemeColor(c);
+    setFormCustomColor("");
+    if (editingBlock) {
+      handleUpdateBlock(editingBlock.pageIndex, editingBlock.block.id, {
+        themeColor: c,
+        customColor: undefined,
+      });
+    }
+  };
+
+  // ===== Inspector kanan: Blok / Teks / Gambar (live, tanpa tombol simpan) =====
+  const liveBlock = editingBlock
+    ? newspaperData.pages[editingBlock.pageIndex]?.blocks.find((b) => b.id === editingBlock.block.id)
+    : undefined;
+  const upd = (u: Partial<NewspaperBlock>) => {
+    if (editingBlock) handleUpdateBlock(editingBlock.pageIndex, editingBlock.block.id, u);
+  };
+  const isHex = (v: string) => /^#[0-9a-fA-F]{6}$/.test(v);
+
+  const renderColorRow = (
+    label: string,
+    value: string | undefined,
+    fallback: string,
+    onChange: (v: string | undefined) => void
+  ) => (
+    <div className="flex items-center gap-2.5 rounded-xl border border-stone-200 bg-white px-3 py-2">
+      <label className="relative w-5 h-5 shrink-0 cursor-pointer">
+        <span
+          className="block w-5 h-5 rounded-md border border-stone-300"
+          style={{ backgroundColor: value && isHex(value) ? value : fallback }}
+        />
+        <input
+          type="color"
+          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+          value={value && isHex(value) ? value : fallback}
+          onChange={(e) => onChange(e.target.value.toUpperCase())}
+          aria-label={label}
+        />
+      </label>
+      <span className="text-xs text-stone-800 flex-1 truncate">{label}</span>
+      <input
+        key={value ?? "none"}
+        type="text"
+        defaultValue={value ?? ""}
+        placeholder={fallback.toUpperCase()}
+        maxLength={7}
+        onChange={(e) => {
+          let v = e.target.value.trim();
+          if (v && !v.startsWith("#")) v = "#" + v;
+          if (isHex(v)) onChange(v.toUpperCase());
+        }}
+        className="w-[4.5rem] text-right text-[11px] font-mono text-stone-700 bg-transparent focus:outline-none"
+      />
+      {value && (
+        <button
+          type="button"
+          onClick={() => onChange(undefined)}
+          className="text-stone-400 hover:text-stone-700 cursor-pointer"
+          title="Reset"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+  );
+
+  const renderNumField = (
+    label: string,
+    value: number | undefined,
+    placeholder: string,
+    onChange: (v: number | undefined) => void,
+    min = 0,
+    max = 2000
+  ) => (
+    <label className="flex items-center gap-2 rounded-xl border border-stone-200 bg-white px-3 py-2">
+      <span className="text-xs text-stone-500 shrink-0">{label}</span>
+      <input
+        type="number"
+        min={min}
+        max={max}
+        value={value ?? ""}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value === "" ? undefined : Number(e.target.value))}
+        className="w-full min-w-0 text-sm font-semibold text-stone-900 bg-transparent focus:outline-none"
+      />
+    </label>
+  );
+
+  const handleLiveUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const form = new FormData();
+    form.append("file", file);
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: form });
+      const data = await res.json();
+      if (data.url) upd({ image: data.url });
+      else alert(data.error || "Gagal mengunggah gambar");
+    } catch {
+      alert("Terjadi kesalahan jaringan saat mengunggah gambar");
+    } finally {
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
+
+  const FONT_OPTIONS: { label: string; value: string }[] = [
+    { label: "Bawaan koran (Serif)", value: "" },
+    { label: "Inter", value: "Inter, sans-serif" },
+    { label: "Georgia", value: "Georgia, serif" },
+    { label: "Times New Roman", value: "'Times New Roman', serif" },
+    { label: "Arial", value: "Arial, sans-serif" },
+    { label: "Courier New", value: "'Courier New', monospace" },
+  ];
+
+  const editPanel =
+    editingBlock && liveBlock ? (
+      <div className="space-y-5">
+        {/* Header */}
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <span className={sectionLabel}>{BLOCK_TYPE_LABEL[liveBlock.type]}</span>
+            <p className="text-sm font-bold text-stone-900 mt-0.5 line-clamp-2">{liveBlock.title}</p>
           </div>
-          <p className="text-xs text-stone-500 mt-1 font-medium">
-            Atur tata letak koran fleksibel multi-halaman: drag &amp; drop posisi, sesuaikan lebar kotak, isi ruang kosong, dan format teks 1-4 kolom.
-          </p>
+          <div className="flex items-center gap-0.5 shrink-0">
+            <button
+              type="button"
+              title="Duplikat"
+              onClick={() => handleAddBlockDirect(editingBlock.pageIndex, { ...liveBlock, id: `block-${Date.now()}` })}
+              className="p-1.5 rounded-md hover:bg-stone-100 text-stone-600 cursor-pointer"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              title="Hapus kotak"
+              onClick={() => {
+                handleDeleteBlock(editingBlock.pageIndex, liveBlock.id);
+                setEditingBlock(null);
+              }}
+              className="p-1.5 rounded-md hover:bg-red-50 text-red-600 cursor-pointer"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              title="Tutup"
+              onClick={() => setEditingBlock(null)}
+              className="p-1.5 rounded-md hover:bg-stone-100 text-stone-600 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Format Lama Preset (Gambar 1 Cover & Gambar 2 Halaman Isi B&W) */}
-          <button
-            type="button"
-            onClick={handleApplyFullFormatLama}
-            className="inline-flex items-center gap-1.5 bg-stone-900 hover:bg-black text-amber-300 border border-amber-400/40 px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
-            title="Terapkan format edisi koran klasik lengkap: Halaman 1 Cover (Gambar 1) & Halaman 2 Jendela Redaksi B&W (Gambar 2)"
-          >
-            <BookOpen className="w-4 h-4 text-amber-400" />
-            <span>Format Lama (Gambar 1 &amp; 2)</span>
-          </button>
-
-          {/* Tambah Koran Baru / Edisi Selanjutnya */}
-          <button
-            type="button"
-            onClick={handleCreateNewEdition}
-            className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
-            title="Buka lembar kerja baru untuk membuat edisi koran selanjutnya"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Tambah Koran / Edisi Selanjutnya</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="inline-flex items-center gap-2 bg-[#E50914] hover:bg-[#B91C1C] text-white px-5 py-2.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Cetak / Unduh PDF A4</span>
-          </button>
-
-          {/* Simpan Draft */}
-          <button
-            type="button"
-            onClick={handleSaveDraft}
-            disabled={isPending}
-            className="inline-flex items-center gap-1.5 bg-amber-50 hover:bg-amber-100 text-amber-900 px-4 py-2.5 rounded-lg text-xs font-bold transition-all border border-amber-300 shadow-2xs cursor-pointer disabled:opacity-50"
-            title="Simpan sebagai draft sementara tanpa menerbitkan"
-          >
-            {isPending ? (
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <FileText className="w-3.5 h-3.5 text-amber-700" />
-            )}
-            <span>Simpan Draft</span>
-          </button>
-
-          {/* Simpan & Terbitkan Edisi Final */}
-          <button
-            type="button"
-            onClick={handleSaveEdition}
-            disabled={isPending}
-            className="inline-flex items-center gap-1.5 bg-white hover:bg-stone-50 text-stone-800 px-4 py-2.5 rounded-lg text-xs font-bold transition-all border border-stone-200 shadow-2xs cursor-pointer disabled:opacity-50"
-            title="Simpan edisi final ke basis data"
-          >
-            {isPending ? (
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            ) : (
-              <Save className="w-3.5 h-3.5 text-stone-600" />
-            )}
-            <span>Simpan &amp; Terbitkan Edisi</span>
-          </button>
+        {/* Tabs Blok / Teks / Gambar */}
+        <div className="grid grid-cols-3 rounded-lg bg-stone-100 p-0.5 text-[11px] font-bold">
+          {([
+            ["block", "Blok"],
+            ["text", "Teks"],
+            ["image", "Gambar"],
+          ] as const).map(([k, label]) => (
+            <button
+              key={k}
+              type="button"
+              onClick={() => setEditTarget(k)}
+              className={`py-1.5 rounded-md cursor-pointer transition-colors ${
+                editTarget === k ? "bg-white text-[#7F0000] shadow-xs" : "text-stone-600"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
         </div>
+
+        {/* ================= TAB: BLOK ================= */}
+        {editTarget === "block" && (
+          <div className="space-y-5">
+            <section className="space-y-2">
+              <span className={sectionLabel}>Posisi &amp; Ukuran</span>
+              <div className="grid grid-cols-2 gap-2">
+                {renderNumField("Kolom", liveBlock.colSpan, "6", (v) => upd({ colSpan: Math.min(12, Math.max(1, v ?? 6)) }), 1, 12)}
+                {renderNumField("Tinggi", liveBlock.customHeight, "auto", (v) => upd({ customHeight: v }))}
+              </div>
+              <div className="grid grid-cols-6 gap-1.5">
+                {[3, 4, 6, 8, 9, 12].map((s) => (
+                  <button key={s} type="button" onClick={() => upd({ colSpan: s })} className={chipCls(liveBlock.colSpan === s)}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </section>
+
+            <section className="space-y-2">
+              <span className={sectionLabel}>Gaya</span>
+              {renderColorRow("Warna latar", liveBlock.customColor, "#FFFFFF", (v) => upd({ customColor: v }))}
+              {renderColorRow("Warna border", liveBlock.borderColor, "#000000", (v) => upd({ borderColor: v }))}
+              <div className="grid grid-cols-2 gap-2">
+                {renderNumField("Radius", liveBlock.radius, "2", (v) => upd({ radius: v }), 0, 50)}
+                {renderNumField("Border", liveBlock.borderWidth, "1", (v) => upd({ borderWidth: v }), 0, 12)}
+              </div>
+              <div>
+                <span className="text-[11px] text-stone-500 block mb-1.5">Preset tema</span>
+                <div className="flex flex-wrap gap-2">
+                  {(Object.keys(THEME_SWATCH) as NonNullable<NewspaperBlock["themeColor"]>[]).map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      title={c}
+                      onClick={() => upd({ themeColor: c, customColor: undefined })}
+                      style={{ backgroundColor: THEME_SWATCH[c] }}
+                      className={`w-7 h-7 rounded-full border cursor-pointer ${
+                        liveBlock.themeColor === c && !liveBlock.customColor
+                          ? "ring-2 ring-offset-1 ring-[#7F0000] border-transparent"
+                          : "border-stone-300"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+            </section>
+
+            {liveBlock.type === "text_columns" && (
+              <section className="space-y-2">
+                <span className={sectionLabel}>Tata Letak Gambar</span>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {([
+                    ["top", "Atas"],
+                    ["left", "Kiri"],
+                    ["right", "Kanan"],
+                    ["bottom", "Bawah"],
+                  ] as const).map(([k, label]) => (
+                    <button key={k} type="button" onClick={() => upd({ imagePosition: k })} className={chipCls((liveBlock.imagePosition || "left") === k)}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
+          </div>
+        )}
+
+        {/* ================= TAB: TEKS ================= */}
+        {editTarget === "text" && (
+          <div className="space-y-5">
+            <section className="space-y-2">
+              <span className={sectionLabel}>Isi</span>
+              <input
+                type="text"
+                value={liveBlock.title}
+                onChange={(e) => upd({ title: e.target.value })}
+                placeholder="Judul / headline"
+                className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#7F0000]"
+              />
+              {(liveBlock.type === "text_columns" || liveBlock.type === "article") && (
+                <textarea
+                  rows={6}
+                  value={liveBlock.content || ""}
+                  onChange={(e) => upd({ content: e.target.value })}
+                  placeholder="Isi berita"
+                  className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#7F0000]"
+                />
+              )}
+              {liveBlock.type === "hero_greeting" && (
+                <div className="space-y-2">
+                  {([
+                    ["greeting", "Ucapan"],
+                    ["name", "Nama pejabat"],
+                    ["positionPrefix", "Awalan jabatan"],
+                    ["position", "Jabatan"],
+                    ["positionSub", "Instansi"],
+                  ] as const).map(([k, label]) => (
+                    <input
+                      key={k}
+                      type="text"
+                      value={(liveBlock[k] as string | undefined) || ""}
+                      onChange={(e) => upd({ [k]: e.target.value } as Partial<NewspaperBlock>)}
+                      placeholder={label}
+                      className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#7F0000]"
+                    />
+                  ))}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsPortalPickerOpen(true)}
+                className={`${ghostBtn} w-full`}
+                title="Isi dari berita portal"
+              >
+                <FileCheck className="w-3.5 h-3.5 text-[#7F0000]" />
+                <span>Ambil dari berita portal</span>
+              </button>
+            </section>
+
+            <section className="space-y-2">
+              <span className={sectionLabel}>Teks</span>
+              <div className="grid grid-cols-[1fr_5.5rem] gap-2">
+                <select
+                  value={liveBlock.textFont || ""}
+                  onChange={(e) => upd({ textFont: e.target.value || undefined })}
+                  className="rounded-xl border border-stone-200 bg-white px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#7F0000]"
+                >
+                  {FONT_OPTIONS.map((f) => (
+                    <option key={f.label} value={f.value}>
+                      {f.label}
+                    </option>
+                  ))}
+                </select>
+                <label className="flex items-center gap-1 rounded-xl border border-stone-200 bg-white px-3 py-2">
+                  <input
+                    type="number"
+                    min={5}
+                    max={40}
+                    step={0.5}
+                    value={liveBlock.textSize ?? ""}
+                    placeholder="7.5"
+                    onChange={(e) => upd({ textSize: e.target.value === "" ? undefined : Number(e.target.value) })}
+                    className="w-full min-w-0 text-sm font-semibold bg-transparent focus:outline-none"
+                  />
+                  <span className="text-[11px] text-stone-400">px</span>
+                </label>
+              </div>
+              {renderColorRow("Warna teks", liveBlock.textColor, "#111827", (v) => upd({ textColor: v }))}
+              {renderColorRow("Warna BG teks", liveBlock.textBgColor, "#BFE3F2", (v) => upd({ textBgColor: v }))}
+              <div className="grid grid-cols-4 rounded-xl bg-stone-100 p-1">
+                {([
+                  ["left", AlignLeft],
+                  ["center", AlignCenter],
+                  ["right", AlignRight],
+                  ["justify", AlignJustify],
+                ] as const).map(([k, Icon]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => upd({ textAlign: k })}
+                    className={`py-1.5 rounded-lg flex items-center justify-center cursor-pointer ${
+                      (liveBlock.textAlign || "justify") === k ? "bg-white text-[#7F0000] shadow-xs" : "text-stone-500"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                  </button>
+                ))}
+              </div>
+              {liveBlock.type === "text_columns" && (
+                <div>
+                  <span className="text-[11px] text-stone-500 block mb-1.5">Kolom teks</span>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[1, 2, 3, 4].map((c) => (
+                      <button key={c} type="button" onClick={() => upd({ textColumns: c })} className={chipCls((liveBlock.textColumns || 1) === c)}>
+                        {c} kol
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+
+        {/* ================= TAB: GAMBAR ================= */}
+        {editTarget === "image" && (
+          <div className="space-y-4">
+            <span className={`${sectionLabel} block`}>Gambar</span>
+            {liveBlock.image ? (
+              <div className="h-32 rounded-2xl overflow-hidden bg-stone-200 border border-stone-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={liveBlock.image}
+                  alt="Pratinjau"
+                  className={`w-full h-full ${
+                    liveBlock.imageFit === "fit" ? "object-contain" : liveBlock.imageFit === "stretch" ? "object-fill" : "object-cover"
+                  }`}
+                  style={{
+                    filter: liveBlock.imageGrayscale ? "grayscale(1)" : undefined,
+                    transform:
+                      `${liveBlock.imageFlipV ? "scaleY(-1) " : ""}${liveBlock.imageFlipH ? "scaleX(-1)" : ""}`.trim() || undefined,
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="h-24 rounded-2xl border border-dashed border-stone-300 flex items-center justify-center text-xs text-stone-400">
+                Belum ada gambar
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <label className={`${ghostBtn} cursor-pointer`}>
+                {uploading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                <span>{liveBlock.image ? "Ganti" : "Unggah"}</span>
+                <input type="file" accept="image/*" onChange={handleLiveUpload} className="hidden" disabled={uploading} />
+              </label>
+              <button
+                type="button"
+                disabled={!liveBlock.image}
+                onClick={() => upd({ image: undefined })}
+                className={`${ghostBtn} !text-red-600`}
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Hapus</span>
+              </button>
+            </div>
+
+            <input
+              type="text"
+              value={liveBlock.image || ""}
+              onChange={(e) => upd({ image: e.target.value || undefined })}
+              placeholder="atau tempel URL gambar"
+              className="w-full rounded-xl border border-stone-200 px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-[#7F0000]"
+            />
+
+            <div className="grid grid-cols-3 rounded-xl bg-stone-100 p-1 text-xs font-semibold">
+              {([
+                ["fill", "Isi"],
+                ["fit", "Pas"],
+                ["stretch", "Tarik"],
+              ] as const).map(([k, label]) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => upd({ imageFit: k })}
+                  className={`py-1.5 rounded-lg cursor-pointer ${
+                    (liveBlock.imageFit || "fill") === k ? "bg-white text-[#7F0000] font-bold shadow-xs" : "text-stone-500"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            {([
+              ["imageGrayscale", "Greyscale"],
+              ["imageFlipV", "Balik Vertikal"],
+              ["imageFlipH", "Horizontal"],
+            ] as const).map(([k, label]) => (
+              <div key={k} className="flex items-center justify-between text-sm text-stone-800">
+                <span>{label}</span>
+                {renderToggle(!!liveBlock[k], () => upd({ [k]: !liveBlock[k] } as Partial<NewspaperBlock>))}
+              </div>
+            ))}
+
+            {liveBlock.type === "text_columns" && liveBlock.image && (
+              <div className="grid grid-cols-2 gap-2">
+                {renderNumField("Lebar", liveBlock.imageWidth, "64", (v) => upd({ imageWidth: v }))}
+                {renderNumField("Tinggi", liveBlock.imageHeight, "56", (v) => upd({ imageHeight: v }))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+    ) : null;
 
+  return (
+    <div className="space-y-4">
       {/* Success Notification */}
       {successMessage && (
         <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-semibold flex items-center justify-between gap-2 animate-fade-in">
@@ -912,401 +1410,397 @@ export default function KoranClientManager({
         </div>
       )}
 
-      {/* Navigasi View Switcher: Kanvas Editor vs Daftar Edisi */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-200 pb-3">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveViewTab("editor")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeViewTab === "editor"
-                ? "bg-[#7F0000] text-white shadow-xs"
-                : "bg-white hover:bg-stone-100 text-stone-700 border border-stone-200"
-            }`}
-          >
-            <Layout className="w-4 h-4" />
-            <span>Kanvas Editor Desain Koran</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveViewTab("archive")}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-              activeViewTab === "archive"
-                ? "bg-[#7F0000] text-white shadow-xs"
-                : "bg-white hover:bg-stone-100 text-stone-700 border border-stone-200"
-            }`}
-          >
-            <Newspaper className="w-4 h-4" />
-            <span>Daftar Arsip Edisi Koran</span>
-            <span
-              className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                activeViewTab === "archive"
-                  ? "bg-white text-[#7F0000]"
-                  : "bg-stone-100 text-stone-700 border border-stone-200"
-              }`}
-            >
-              {editions.length}
-            </span>
-          </button>
-        </div>
-
-        {/* Status Edisi Aktif Ringkas */}
-        <div className="flex items-center gap-2 text-xs flex-wrap">
-          <span className="text-stone-500 font-medium">Edisi Aktif:</span>
-          <span className="font-black text-stone-900 uppercase">
-            {newspaperData.masthead.editionBadge || "EDISI CETAK"}
-          </span>
-          {newspaperData.isDraft ? (
-            <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-amber-100 text-amber-800 border border-amber-300">
-              DRAFT
-            </span>
-          ) : currentEditionId ? (
-            <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-300">
-              TERBIT
-            </span>
-          ) : (
-            <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-blue-100 text-blue-800 border border-blue-300">
-              EDISI BARU
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* ========================================================= */}
-      {/* 2. MULTI-PAGE SELECTOR & CONTROLLER BAR (Khusus Mode Editor) */}
-      {/* ========================================================= */}
-      {activeViewTab === "editor" && (
-        <>
-          <div className="bg-white p-4 rounded-xl border border-stone-200 shadow-xs space-y-3">
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-          {/* Page Tabs */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs font-bold text-stone-500 mr-1 flex items-center gap-1">
-              <Layers className="w-3.5 h-3.5" />
-              <span>Halaman:</span>
-            </span>
-
-            {newspaperData.pages.map((p, idx) => (
-              <button
-                key={p.id}
-                onClick={() => setActivePageIndex(idx)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                  activePageIndex === idx
-                    ? "bg-[#7F0000] text-white shadow-xs"
-                    : "bg-stone-100 hover:bg-stone-200 text-stone-700 border border-stone-200"
-                }`}
-              >
-                <span>Hal. {p.pageNumber}</span>
-                {p.showCoverMasthead && (
-                  <span className="text-[9px] bg-amber-400 text-black px-1 rounded font-black">
-                    COVER
-                  </span>
-                )}
-                {p.isGrayscale && (
-                  <span className="text-[9px] bg-stone-900 text-white px-1 rounded font-mono">
-                    B&amp;W
-                  </span>
-                )}
-              </button>
-            ))}
-
-            {/* Add New Page Button */}
-            <button
-              type="button"
-              onClick={handleAddPage}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold bg-red-50 hover:bg-red-100 text-[#7F0000] border border-red-200 transition-all cursor-pointer flex items-center gap-1"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Tambah Halaman Baru</span>
-            </button>
-          </div>
-
-          {/* Mode Switch & Zoom Scale */}
-          <div className="flex items-center gap-3">
-            {/* Editor vs Preview Mode */}
-            <div className="inline-flex rounded-lg bg-stone-100 p-0.5 border border-stone-200 text-xs">
+      {activeViewTab === "editor" ? (
+        <div className="bg-white border border-stone-200 rounded-xl shadow-xs overflow-hidden flex flex-col h-[calc(100vh-7rem)] min-h-[640px]">
+          {/* ===================== TOP BAR ===================== */}
+          <div className="h-14 shrink-0 border-b border-stone-200 px-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
               <button
                 type="button"
-                onClick={() => setIsEditorMode(true)}
-                className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                  isEditorMode
-                    ? "bg-[#E50914] text-white shadow-xs"
-                    : "text-stone-600 hover:text-stone-900"
-                }`}
+                onClick={() => setActiveViewTab("archive")}
+                className="p-1.5 rounded-lg hover:bg-stone-100 text-stone-600 cursor-pointer"
+                title="Kembali ke daftar arsip edisi"
               >
-                Mode Editor (Interaktif)
+                <ArrowLeft className="w-4 h-4" />
+              </button>
+              <div className="min-w-0">
+                <input
+                  type="text"
+                  value={newspaperData.masthead.editionBadge || ""}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setNewspaperData((prev) => ({
+                      ...prev,
+                      masthead: { ...prev.masthead, editionBadge: val },
+                    }));
+                  }}
+                  placeholder="EDISI OKTOBER 2026"
+                  className="block w-56 sm:w-72 text-sm font-bold text-stone-900 bg-transparent border-0 p-0 focus:outline-none focus:ring-0 truncate"
+                  title="Judul edisi (tampil di cover koran)"
+                />
+                <div className="text-[11px] font-medium flex items-center gap-1.5">
+                  {isPending ? (
+                    <span className="text-stone-500">Menyimpan…</span>
+                  ) : newspaperData.isDraft ? (
+                    <span className="text-amber-600">● Draft</span>
+                  ) : currentEditionId ? (
+                    <span className="text-emerald-600">● Terbit</span>
+                  ) : (
+                    <span className="text-blue-600">● Edisi baru</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="hidden md:flex items-center gap-1">
+              <button type="button" onClick={handleUndo} disabled={hist.past.length === 0} className="p-2 rounded-lg hover:bg-stone-100 text-stone-700 disabled:opacity-30 cursor-pointer" title="Urungkan">
+                <Undo2 className="w-4 h-4" />
+              </button>
+              <button type="button" onClick={handleRedo} disabled={hist.future.length === 0} className="p-2 rounded-lg hover:bg-stone-100 text-stone-700 disabled:opacity-30 cursor-pointer" title="Ulangi">
+                <Redo2 className="w-4 h-4" />
+              </button>
+              <span className="w-px h-5 bg-stone-200 mx-1" />
+              <button type="button" onClick={handleCreateNewEdition} className="p-2 rounded-lg hover:bg-stone-100 text-stone-700 cursor-pointer" title="Edisi baru">
+                <Plus className="w-4 h-4" />
+              </button>
+              <button type="button" onClick={() => setActiveViewTab("archive")} className="p-2 rounded-lg hover:bg-stone-100 text-stone-700 cursor-pointer inline-flex items-center gap-1" title="Arsip edisi tersimpan">
+                <Layers className="w-4 h-4" />
+                <span className="text-[10px] font-mono">{editions.length}</span>
+              </button>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsEditorMode((v) => !v)}
+                className={`${ghostBtn} ${!isEditorMode ? "!bg-stone-900 !text-white !border-stone-900" : ""}`}
+                title="Beralih antara mode editor dan pratinjau cetak murni"
+              >
+                <Eye className="w-4 h-4" />
+                <span className="hidden sm:inline">Preview</span>
+              </button>
+              <button type="button" onClick={handleSaveDraft} disabled={isPending} className={ghostBtn} title="Simpan sebagai draft sementara">
+                {isPending ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : null}
+                <span>Simpan Draft</span>
+              </button>
+              <button type="button" onClick={handleSaveEdition} disabled={isPending} className={`${ghostBtn} hidden lg:inline-flex`} title="Simpan & terbitkan edisi final">
+                <Save className="w-3.5 h-3.5" />
+                <span>Terbitkan</span>
               </button>
               <button
                 type="button"
-                onClick={() => setIsEditorMode(false)}
-                className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                  !isEditorMode
-                    ? "bg-[#E50914] text-white shadow-xs"
-                    : "text-stone-600 hover:text-stone-900"
-                }`}
+                onClick={handlePrint}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-[#7F0000] hover:bg-[#650000] text-white text-xs font-semibold px-3.5 py-2 transition-colors cursor-pointer"
               >
-                Pratinjau Cetak Murni
+                <Download className="w-4 h-4" />
+                <span>Ekspor PDF</span>
               </button>
             </div>
-
-            {/* Zoom Scale */}
-            <div className="hidden sm:flex items-center gap-1.5 text-xs text-stone-600">
-              <span>Zoom:</span>
-              <div className="inline-flex rounded-lg bg-white border border-stone-200 p-0.5 text-xs font-bold shadow-2xs">
-                {[60, 75, 85, 100].map((sc) => (
-                  <button
-                    key={sc}
-                    onClick={() => setPreviewScale(sc)}
-                    className={`px-2 py-0.5 rounded transition-colors ${
-                      previewScale === sc
-                        ? "bg-stone-900 text-white"
-                        : "text-stone-600 hover:text-stone-900"
-                    }`}
-                  >
-                    {sc}%
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
-        </div>
 
-        {/* Current Page Settings Bar */}
-        <div className="pt-2 border-t border-stone-100 flex flex-wrap items-center justify-between gap-2.5 text-xs">
-          <div className="flex items-center gap-2.5 flex-wrap w-full">
-            <span className="font-bold text-stone-800">
-              Sedang Mengedit: Halaman {activePageIndex + 1} ({newspaperData.pages[activePageIndex]?.blocks.length || 0} Kotak Section)
-            </span>
-
-            {/* Quick Edit Judul Edisi Cover */}
-            <div className="flex flex-wrap items-center gap-1.5 bg-stone-50 px-2.5 py-1.5 rounded-lg border border-stone-200 w-full sm:w-auto">
-              <span className="text-stone-500 font-bold text-[10.5px] whitespace-nowrap">Judul Edisi:</span>
-              <input
-                type="text"
-                value={newspaperData.masthead.editionBadge || ""}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setNewspaperData((prev) => ({
-                    ...prev,
-                    masthead: { ...prev.masthead, editionBadge: val },
-                  }));
-                }}
-                placeholder="misal: EDISI OKTOBER 2026"
-                className="bg-white border border-stone-300 rounded px-2 py-1 text-xs font-black text-stone-900 focus:outline-none focus:ring-1 focus:ring-red-500 flex-1 min-w-[140px] sm:w-48 uppercase"
-                title="Ketik untuk mengubah judul edisi langsung pada cover koran"
-              />
-            </div>
-
-            {/* Cover: Pemilihan Format Gaya Versi Lama (Gambar 1) vs Versi Baru (Modern) */}
-            {newspaperData.pages[activePageIndex]?.showCoverMasthead && (
-              <div className="flex flex-wrap items-center gap-1.5 bg-stone-50 p-2 rounded-lg border border-stone-200 w-full sm:w-auto">
-                <span className="text-stone-600 font-bold text-[10.5px] whitespace-nowrap">Format Cover:</span>
-                <div className="inline-flex flex-wrap rounded-md bg-stone-200 p-0.5 text-[10.5px] font-bold">
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateCoverVersion(activePageIndex, "v1_lama")}
-                    className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
-                      (newspaperData.pages[activePageIndex]?.coverVersion || newspaperData.masthead.coverVersion || "v1_lama") === "v1_lama"
-                        ? "bg-[#B71C1C] text-white shadow-xs"
-                        : "text-stone-600 hover:text-stone-900"
-                    }`}
-                    title="Versi Lama: Strip Merah, Kotak Section Biru Klasik (Sesuai Gambar 1)"
-                  >
-                    Versi Lama (Gambar 1)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleUpdateCoverVersion(activePageIndex, "v2_baru")}
-                    className={`px-2 py-0.5 rounded transition-all cursor-pointer ${
-                      (newspaperData.pages[activePageIndex]?.coverVersion || newspaperData.masthead.coverVersion) === "v2_baru"
-                        ? "bg-[#E65100] text-white shadow-xs"
-                        : "text-stone-600 hover:text-stone-900"
-                    }`}
-                    title="Versi Baru: Strip Oranye 3 Segmen & Card Modern Oranye"
-                  >
-                    Versi Baru (Modern)
+          {/* ===================== BODY ===================== */}
+          <div className="flex-1 min-h-0 flex">
+            {/* ---------- LEFT SIDEBAR ---------- */}
+            <aside className="w-64 shrink-0 border-r border-stone-200 overflow-y-auto p-4 space-y-5 hidden md:block">
+              {/* Halaman */}
+              <section>
+                <div className="flex items-center justify-between mb-2">
+                  <span className={sectionLabel}>Halaman ({newspaperData.pages.length})</span>
+                  <button type="button" onClick={handleAddPage} className="text-[11px] font-bold text-[#7F0000] hover:underline cursor-pointer">
+                    + Tambah
                   </button>
                 </div>
-
-                {/* Tombol Terapkan Layout Cepat */}
-                {(newspaperData.pages[activePageIndex]?.coverVersion || newspaperData.masthead.coverVersion || "v1_lama") === "v1_lama" ? (
-                  <button
-                    type="button"
-                    onClick={() => handleApplyCoverV1Lama(activePageIndex)}
-                    className="px-2 py-1 rounded bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-300 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1"
-                    title="Muat susunan kotak section khas Versi Lama (Gambar 1)"
-                  >
-                    <Sparkles className="w-2.5 h-2.5 text-blue-600" />
-                    <span>Terapkan Section Versi Lama</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleApplyCoverV2Baru(activePageIndex)}
-                    className="px-2 py-1 rounded bg-orange-50 hover:bg-orange-100 text-orange-950 border border-orange-300 text-[10px] font-bold cursor-pointer transition-all flex items-center gap-1"
-                    title="Muat susunan kotak section modern Versi Baru"
-                  >
-                    <Sparkles className="w-2.5 h-2.5 text-orange-600" />
-                    <span>Terapkan Section Versi Baru</span>
-                  </button>
-                )}
-              </div>
-            )}
-
-            {/* Sub-Page: Edit Judul Header Halaman Per Halaman (Sesuai Gambar 2) */}
-            {!newspaperData.pages[activePageIndex]?.showCoverMasthead && (
-              <div className="flex flex-wrap items-center gap-2 bg-stone-50 p-2 rounded-lg border border-stone-200 w-full sm:w-auto">
-                <div className="flex items-center gap-1.5 w-full sm:w-auto">
-                  <span className="text-stone-600 font-bold text-[10.5px] whitespace-nowrap flex items-center gap-1">
-                    <Edit className="w-3 h-3 text-red-600 shrink-0" />
-                    <span>Judul Header Halaman:</span>
-                  </span>
-                  <input
-                    type="text"
-                    value={newspaperData.pages[activePageIndex]?.runningHeader ?? "JENDELA REDAKSI"}
-                    onChange={(e) => handleUpdatePageHeader(activePageIndex, e.target.value)}
-                    placeholder="misal: JENDELA REDAKSI"
-                    className="bg-white border border-stone-300 rounded px-2 py-1 text-xs font-black text-stone-900 focus:outline-none focus:ring-1 focus:ring-red-500 flex-1 min-w-[120px] sm:w-44 uppercase"
-                    title="Ketik untuk mengubah judul header di atas halaman ini (seperti pada Gambar 2)"
-                  />
-                </div>
-
-                {/* Quick preset chips */}
-                <div className="hidden lg:flex items-center gap-1">
-                  {[
-                    "JENDELA REDAKSI",
-                    "BERITA UTAMA",
-                    "HUKUM & KRIMINAL",
-                    "LIPUTAN DAERAH",
-                    "POLRES KITA",
-                  ].map((chip) => (
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {newspaperData.pages.map((p, idx) => (
                     <button
-                      key={chip}
+                      key={p.id}
                       type="button"
-                      onClick={() => handleUpdatePageHeader(activePageIndex, chip)}
-                      className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold transition-all cursor-pointer ${
-                        newspaperData.pages[activePageIndex]?.runningHeader === chip
-                          ? "bg-red-700 text-white"
-                          : "bg-white text-stone-700 border border-stone-200 hover:bg-stone-100"
-                      }`}
+                      onClick={() => {
+                        setActivePageIndex(idx);
+                        setEditingBlock(null);
+                      }}
+                      className="shrink-0 flex flex-col items-center gap-1 cursor-pointer"
+                      title={p.title}
                     >
-                      {chip}
+                      <div
+                        className={`w-[54px] h-[76px] rounded-md bg-white p-1 flex flex-col gap-0.5 overflow-hidden border-2 ${
+                          activePageIndex === idx ? "border-[#7F0000]" : "border-stone-200"
+                        } ${p.isGrayscale ? "grayscale" : ""}`}
+                      >
+                        {p.showCoverMasthead && <div className="h-2.5 bg-stone-900 rounded-[1px] shrink-0" />}
+                        <div className="flex flex-wrap gap-0.5 content-start flex-1 overflow-hidden">
+                          {p.blocks.slice(0, 8).map((b) => (
+                            <div
+                              key={b.id}
+                              style={{ width: `calc(${(b.colSpan / 12) * 100}% - 2px)` }}
+                              className={`h-3 rounded-[1px] ${b.type === "text_columns" || b.type === "redaksi_box" ? "bg-sky-200" : "bg-slate-400"}`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                      <span className={`text-[10px] ${activePageIndex === idx ? "text-[#7F0000] font-bold" : "text-stone-500"}`}>
+                        {p.pageNumber}
+                      </span>
                     </button>
                   ))}
-                </div>
-
-                {/* Tombol Format Klasik Gambar 2 & Tambah Boks Redaksi */}
-                <div className="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
-                  <button
-                    type="button"
-                    onClick={() => handleApplyPage2FormatLama(activePageIndex)}
-                    className="px-2.5 py-1 rounded bg-stone-900 hover:bg-black text-amber-300 border border-amber-400/50 text-[10px] font-bold cursor-pointer transition-all inline-flex items-center gap-1"
-                    title="Terapkan susunan Halaman Isi Klasik Hitam Putih (Boks Susunan Redaksi + 2 Berita Kolom sesuai Gambar 2)"
-                  >
-                    <BookOpen className="w-3 h-3 text-amber-400 shrink-0" />
-                    <span>Format Gambar 2 (Jendela Redaksi B&amp;W)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => handleInsertRedaksiBox(activePageIndex)}
-                    className="px-2.5 py-1 rounded bg-white hover:bg-stone-100 text-stone-800 border border-stone-300 text-[10px] font-bold cursor-pointer transition-all inline-flex items-center gap-1 shadow-2xs"
-                    title="Tambahkan Boks Susunan Redaksi Resmi (sesuai Gambar 2) ke halaman ini"
-                  >
-                    <Plus className="w-3 h-3 text-stone-600 shrink-0" />
-                    <span>+ Boks Redaksi</span>
+                  <button type="button" onClick={handleAddPage} className="shrink-0 flex flex-col items-center gap-1 cursor-pointer" title="Halaman baru">
+                    <div className="w-[54px] h-[76px] rounded-md border border-dashed border-stone-300 flex items-center justify-center text-stone-400 hover:bg-stone-50">
+                      <Plus className="w-4 h-4" />
+                    </div>
+                    <span className="text-[10px] text-stone-500">Baru</span>
                   </button>
                 </div>
-              </div>
-            )}
+                {newspaperData.pages.length > 1 && (
+                  <button type="button" onClick={() => handleDeletePage(activePageIndex)} className="mt-1 text-[11px] font-semibold text-red-600 hover:text-red-700 inline-flex items-center gap-1 cursor-pointer">
+                    <Trash2 className="w-3 h-3" />
+                    <span>Hapus halaman {activePageIndex + 1}</span>
+                  </button>
+                )}
+              </section>
 
-            {/* Mode Hitam Putih / Berwarna Toggle */}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => handleToggleGrayscale(false)}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
-                  newspaperData.pages[activePageIndex]?.isGrayscale
-                    ? "bg-stone-900 text-white border-stone-950 shadow-xs"
-                    : "bg-white hover:bg-stone-50 text-stone-800 border-stone-300"
-                }`}
-                title="Pilihan mengubah halaman ini menjadi Hitam Putih (B&W) atau Berwarna"
-              >
-                <Sparkles className={`w-3.5 h-3.5 ${newspaperData.pages[activePageIndex]?.isGrayscale ? "text-amber-400" : "text-stone-500"}`} />
-                <span>
-                  {newspaperData.pages[activePageIndex]?.isGrayscale
-                    ? "Hal. Ini: Hitam Putih (B&W)"
-                    : "Hal. Ini: Berwarna"}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleToggleGrayscale(true)}
-                className="text-[10px] text-stone-500 hover:text-stone-900 font-semibold underline cursor-pointer"
-                title="Terapkan Hitam Putih ke Seluruh Halaman Koran"
-              >
-                (Semua: {newspaperData.isGrayscale ? "B&W" : "Warna"})
-              </button>
-            </div>
+              {/* Tambah Blok */}
+              <section>
+                <span className={`${sectionLabel} block mb-2`}>Tambah Blok</span>
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => handleOpenAddModal(activePageIndex, 6)} className={ghostBtn}>
+                    <FileText className="w-4 h-4 text-[#7F0000]" />
+                    <span>Kotak Berita</span>
+                  </button>
+                  <button type="button" onClick={() => handleInsertRedaksiBox(activePageIndex)} className={ghostBtn}>
+                    <BookOpen className="w-4 h-4 text-[#7F0000]" />
+                    <span>Redaksi</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleOpenAddModal(activePageIndex, 5);
+                      setFormType("photo_story");
+                    }}
+                    className={ghostBtn}
+                  >
+                    <ImageIcon className="w-4 h-4 text-[#7F0000]" />
+                    <span>Gambar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      handleOpenAddModal(activePageIndex, 12);
+                      setFormType("ad_banner");
+                    }}
+                    className={ghostBtn}
+                  >
+                    <Sparkles className="w-4 h-4 text-[#7F0000]" />
+                    <span>Iklan</span>
+                  </button>
+                </div>
+              </section>
 
-            <label className="flex items-center gap-1.5 cursor-pointer text-stone-600 hover:text-stone-900 font-medium select-none">
-              <input
-                type="checkbox"
-                checked={newspaperData.pages[activePageIndex]?.showCoverMasthead || false}
-                onChange={() => handleToggleCoverMasthead(activePageIndex)}
-                className="rounded border-stone-300 text-red-600 focus:ring-red-500"
+              {/* Layout & Tema (dinamis: versi lama / baru) */}
+              <section className="space-y-3">
+                <span className={`${sectionLabel} block`}>Layout &amp; Tema</span>
+
+                {activePage?.showCoverMasthead ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 rounded-lg bg-stone-100 p-0.5 text-[11px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateCoverVersion(activePageIndex, "v1_lama")}
+                        className={`py-1.5 rounded-md cursor-pointer transition-colors ${activeCoverVersion === "v1_lama" ? "bg-white text-[#7F0000] shadow-xs" : "text-stone-600"}`}
+                      >
+                        Tema Lama
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateCoverVersion(activePageIndex, "v2_baru")}
+                        className={`py-1.5 rounded-md cursor-pointer transition-colors ${activeCoverVersion === "v2_baru" ? "bg-white text-[#7F0000] shadow-xs" : "text-stone-600"}`}
+                      >
+                        Tema Baru
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        activeCoverVersion === "v1_lama"
+                          ? handleApplyCoverV1Lama(activePageIndex)
+                          : handleApplyCoverV2Baru(activePageIndex)
+                      }
+                      className={`${ghostBtn} w-full`}
+                    >
+                      <Sparkles className="w-3.5 h-3.5 text-[#7F0000]" />
+                      <span>Terapkan susunan {activeCoverVersion === "v1_lama" ? "tema lama" : "tema baru"}</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <label className="block text-[11px] text-stone-500">Judul header halaman</label>
+                    <input
+                      type="text"
+                      value={activePage?.runningHeader ?? ""}
+                      onChange={(e) => handleUpdatePageHeader(activePageIndex, e.target.value)}
+                      placeholder="JENDELA REDAKSI"
+                      className="w-full rounded-lg border border-stone-200 px-2.5 py-1.5 text-xs font-bold uppercase focus:outline-none focus:ring-1 focus:ring-[#7F0000]"
+                    />
+                    <div className="flex flex-wrap gap-1">
+                      {["JENDELA REDAKSI", "BERITA UTAMA", "HUKUM & KRIMINAL", "LIPUTAN DAERAH", "POLRES KITA"].map((chip) => (
+                        <button
+                          key={chip}
+                          type="button"
+                          onClick={() => handleUpdatePageHeader(activePageIndex, chip)}
+                          className={`px-1.5 py-0.5 rounded text-[9.5px] font-bold cursor-pointer ${
+                            activePage?.runningHeader === chip ? "bg-[#7F0000] text-white" : "bg-stone-100 text-stone-700 hover:bg-stone-200"
+                          }`}
+                        >
+                          {chip}
+                        </button>
+                      ))}
+                    </div>
+                    <button type="button" onClick={() => handleApplyPage2FormatLama(activePageIndex)} className={`${ghostBtn} w-full`}>
+                      <BookOpen className="w-3.5 h-3.5 text-[#7F0000]" />
+                      <span>Format klasik B&amp;W</span>
+                    </button>
+                  </div>
+                )}
+
+                <button type="button" onClick={handleApplyFullFormatLama} className={`${ghostBtn} w-full`} title="Cover klasik + Jendela Redaksi B&W">
+                  <Newspaper className="w-3.5 h-3.5 text-[#7F0000]" />
+                  <span>Terapkan format lama lengkap</span>
+                </button>
+
+                <div className="flex items-center justify-between text-xs text-stone-800">
+                  <span>Banner header (cover)</span>
+                  {renderToggle(!!activePage?.showCoverMasthead, () => handleToggleCoverMasthead(activePageIndex))}
+                </div>
+                {activePage?.showCoverMasthead && (
+                  <button type="button" onClick={handleOpenHeaderModal} className={`${ghostBtn} w-full`}>
+                    <ImageIcon className="w-3.5 h-3.5 text-[#7F0000]" />
+                    <span>Ubah gambar header</span>
+                  </button>
+                )}
+                <div className="flex items-center justify-between text-xs text-stone-800">
+                  <span>Halaman ini hitam putih</span>
+                  {renderToggle(!!activePage?.isGrayscale, () => handleToggleGrayscale(false))}
+                </div>
+                <div className="flex items-center justify-between text-xs text-stone-800">
+                  <span>Semua halaman B&amp;W</span>
+                  {renderToggle(!!newspaperData.isGrayscale, () => handleToggleGrayscale(true))}
+                </div>
+              </section>
+
+              {/* Layer */}
+              <section>
+                <span className={`${sectionLabel} block mb-2`}>Layer</span>
+                <ul className="space-y-0.5">
+                  {activePage?.blocks.map((b, idx) => (
+                    <li key={b.id}>
+                      <div
+                        onClick={() => handleOpenEditModal(activePageIndex, b)}
+                        className={`group flex items-center gap-2 rounded-md px-2 py-1.5 text-xs cursor-pointer ${
+                          editingBlock?.block.id === b.id ? "bg-red-50 text-[#7F0000] font-bold" : "text-stone-700 hover:bg-stone-50"
+                        }`}
+                      >
+                        {b.type === "photo_story" || b.type === "hero_greeting" ? (
+                          <ImageIcon className="w-3.5 h-3.5 shrink-0" />
+                        ) : (
+                          <FileText className="w-3.5 h-3.5 shrink-0" />
+                        )}
+                        <span className="flex-1 truncate">{b.title || BLOCK_TYPE_LABEL[b.type]}</span>
+                        <span className="text-[10px] text-stone-500 bg-stone-100 rounded px-1">{b.colSpan}/12</span>
+                        <span className="hidden group-hover:flex items-center">
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleMoveLayer(idx, -1); }} className="p-0.5 hover:text-stone-900" title="Naik">
+                            <ChevronUp className="w-3 h-3" />
+                          </button>
+                          <button type="button" onClick={(e) => { e.stopPropagation(); handleMoveLayer(idx, 1); }} className="p-0.5 hover:text-stone-900" title="Turun">
+                            <ChevronDown className="w-3 h-3" />
+                          </button>
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                  {(activePage?.blocks.length ?? 0) === 0 && (
+                    <li className="text-[11px] text-stone-400 px-2">Belum ada blok di halaman ini.</li>
+                  )}
+                </ul>
+              </section>
+            </aside>
+
+            {/* ---------- CANVAS ---------- */}
+            <main className="flex-1 min-w-0 bg-stone-100 overflow-auto p-6 flex justify-center">
+              <NewspaperA4Canvas
+                data={newspaperData}
+                activePageIndex={activePageIndex}
+                isEditorMode={isEditorMode}
+                scalePercent={previewScale}
+                onUpdateBlock={handleUpdateBlock}
+                onDeleteBlock={(pi, id) => {
+                  if (editingBlock?.block.id === id) setEditingBlock(null);
+                  handleDeleteBlock(pi, id);
+                }}
+                onReorderBlocks={handleReorderBlocks}
+                onOpenAddModal={handleOpenAddModal}
+                onOpenEditModal={handleOpenEditModal}
+                selectedBlockId={editingBlock?.block.id ?? null}
+                onOpenHeaderModal={handleOpenHeaderModal}
+                onAddBlock={handleAddBlockDirect}
+                onUpdatePageHeader={handleUpdatePageHeader}
+                onUpdateCoverVersion={handleUpdateCoverVersion}
               />
-              <span>Banner Header (Cover)</span>
-            </label>
+            </main>
 
-            {newspaperData.pages[activePageIndex]?.showCoverMasthead && (
-              <button
-                type="button"
-                onClick={handleOpenHeaderModal}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
-                title="Atur Gambar Header Koran"
-              >
-                <ImageIcon className="w-3.5 h-3.5 text-[#E50914]" />
-                <span>Ubah Gambar Header</span>
+            {/* ---------- RIGHT INSPECTOR ---------- */}
+            <aside className={`${editingBlock ? "w-[24rem]" : "w-72"} shrink-0 border-l border-stone-200 overflow-y-auto p-4 hidden lg:block transition-[width]`}>
+              {editPanel ? (
+                editPanel
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center gap-2 px-4">
+                  <div className="w-12 h-12 rounded-full bg-stone-100 flex items-center justify-center text-stone-500">
+                    <MousePointer2 className="w-5 h-5" />
+                  </div>
+                  <p className="text-sm font-bold text-stone-900">Belum ada blok dipilih</p>
+                  <p className="text-xs text-stone-500">
+                    Klik kotak section di halaman (atau di daftar Layer) untuk menyunting isinya di sini.
+                  </p>
+                </div>
+              )}
+            </aside>
+          </div>
+
+          {/* ===================== BOTTOM BAR (ZOOM) ===================== */}
+          <div className="h-10 shrink-0 border-t border-stone-200 px-4 flex items-center justify-between text-xs text-stone-500">
+            <span className="truncate">
+              Halaman {activePageIndex + 1} — {activePage?.showCoverMasthead ? "Cover" : activePage?.runningHeader || "Isi"} · A4 (210 × 297 mm)
+            </span>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setPreviewScale((s) => Math.max(40, s - 5))} className="p-1 hover:text-stone-900 cursor-pointer" title="Perkecil">
+                <Minus className="w-3.5 h-3.5" />
               </button>
-            )}
+              <input
+                type="range"
+                min={40}
+                max={120}
+                step={5}
+                value={previewScale}
+                onChange={(e) => setPreviewScale(Number(e.target.value))}
+                className="w-32 accent-[#7F0000]"
+                aria-label="Zoom"
+              />
+              <button type="button" onClick={() => setPreviewScale((s) => Math.min(120, s + 5))} className="p-1 hover:text-stone-900 cursor-pointer" title="Perbesar">
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+              <span className="w-10 text-right font-semibold text-stone-700">{previewScale}%</span>
+            </div>
           </div>
-
-          {newspaperData.pages.length > 1 && (
-            <button
-              type="button"
-              onClick={() => handleDeletePage(activePageIndex)}
-              className="text-red-600 hover:text-red-700 font-bold flex items-center gap-1 cursor-pointer text-[11px]"
-            >
-              <Trash2 className="w-3 h-3" />
-              <span>Hapus Halaman Ini</span>
-            </button>
-          )}
         </div>
-      </div>
-
-      {/* ========================================================= */}
-      {/* 3. A4 INTERACTIVE VISUAL CANVAS */}
-      {/* ========================================================= */}
-      <div className="bg-stone-200/70 p-2 sm:p-6 rounded-2xl border border-stone-300 overflow-x-auto">
-        <NewspaperA4Canvas
-          data={newspaperData}
-          activePageIndex={activePageIndex}
-          isEditorMode={isEditorMode}
-          scalePercent={previewScale}
-          onUpdateBlock={handleUpdateBlock}
-          onDeleteBlock={handleDeleteBlock}
-          onReorderBlocks={handleReorderBlocks}
-          onOpenAddModal={handleOpenAddModal}
-          onOpenEditModal={handleOpenEditModal}
-          onOpenHeaderModal={handleOpenHeaderModal}
-          onAddBlock={handleAddBlockDirect}
-          onUpdatePageHeader={handleUpdatePageHeader}
-          onUpdateCoverVersion={handleUpdateCoverVersion}
-        />
+      ) : (
+        <div className="flex items-center justify-between gap-3 border-b border-stone-200 pb-3">
+          <div className="flex items-center gap-2">
+            <Newspaper className="w-5 h-5 text-[#7F0000]" />
+            <h1 className="text-lg font-black text-stone-900 tracking-tight">Arsip Edisi Koran</h1>
           </div>
-        </>
+          <button type="button" onClick={() => setActiveViewTab("editor")} className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold bg-[#7F0000] text-white cursor-pointer">
+            <Layout className="w-4 h-4" />
+            <span>Kembali ke Editor</span>
+          </button>
+        </div>
       )}
 
       {/* ========================================================= */}
@@ -1538,6 +2032,36 @@ export default function KoranClientManager({
                 <label className="block font-bold text-stone-700 mb-1">
                   Format Gaya Warna Section:
                 </label>
+                <div className="flex items-center gap-2 mb-2 p-2 rounded-lg border border-stone-200 bg-stone-50">
+                  <input
+                    type="color"
+                    value={/^#[0-9a-fA-F]{6}$/.test(formCustomColor) ? formCustomColor : "#ffffff"}
+                    onChange={(e) => applyCustomColor(e.target.value.toUpperCase())}
+                    className="w-9 h-9 p-0 border border-stone-300 rounded cursor-pointer bg-white"
+                    aria-label="Pilih warna latar"
+                  />
+                  <input
+                    type="text"
+                    value={formCustomColor}
+                    maxLength={7}
+                    placeholder="#RRGGBB (warna kustom)"
+                    onChange={(e) => {
+                      let v = e.target.value.trim();
+                      if (v && !v.startsWith("#")) v = "#" + v;
+                      applyCustomColor(v.toUpperCase());
+                    }}
+                    className="flex-1 min-w-0 px-2 py-1.5 bg-white border border-stone-300 rounded text-xs font-mono text-stone-900 focus:outline-none focus:border-red-600"
+                  />
+                  {formCustomColor && (
+                    <button
+                      type="button"
+                      onClick={() => applyCustomColor("")}
+                      className="px-2 py-1.5 text-[10px] font-bold text-stone-600 hover:bg-stone-200 rounded cursor-pointer"
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
                   {[
                     { id: "blue", label: "Biru Klasik", badge: "Versi Lama (Gambar 1)", bg: "bg-[#D6EEFC]", border: "border-blue-400" },
@@ -1549,7 +2073,7 @@ export default function KoranClientManager({
                     <button
                       key={tc.id}
                       type="button"
-                      onClick={() => setFormThemeColor(tc.id as NewspaperBlock["themeColor"])}
+                      onClick={() => applyThemePreset(tc.id as NewspaperBlock["themeColor"])}
                       className={`p-2 rounded-lg border text-left flex flex-col justify-between transition-all cursor-pointer ${
                         formThemeColor === tc.id
                           ? "ring-2 ring-red-600 border-red-600 bg-red-50/40"
@@ -1742,379 +2266,6 @@ export default function KoranClientManager({
         </div>
       )}
 
-      {/* ========================================================= */}
-      {/* 5. MODAL: SUNTING KONTEN KOTAK */}
-      {/* ========================================================= */}
-      {editingBlock && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
-          <div className="bg-white border border-stone-200 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-stone-100">
-              <h3 className="text-sm font-bold text-stone-900 flex items-center gap-2">
-                <Edit className="w-4 h-4 text-amber-600" />
-                <span>Sunting Kotak Section</span>
-              </h3>
-              <button
-                type="button"
-                onClick={() => setEditingBlock(null)}
-                className="text-stone-400 hover:text-stone-700"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="space-y-3 text-xs">
-              {/* Width / ColSpan */}
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">Lebar Kotak:</label>
-                <div className="grid grid-cols-6 gap-1.5">
-                  {[
-                    { span: 3, label: "1/4 (3)" },
-                    { span: 4, label: "1/3 (4)" },
-                    { span: 6, label: "1/2 (6)" },
-                    { span: 8, label: "2/3 (8)" },
-                    { span: 9, label: "3/4 (9)" },
-                    { span: 12, label: "Penuh (12)" },
-                  ].map((s) => (
-                    <button
-                      key={s.span}
-                      type="button"
-                      onClick={() => setFormColSpan(s.span)}
-                      className={`py-1.5 rounded border text-[11px] font-bold transition-colors cursor-pointer ${
-                        formColSpan === s.span
-                          ? "bg-[#7F0000] text-white border-red-900"
-                          : "bg-white text-stone-700 border-stone-200 hover:bg-stone-50"
-                      }`}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Info khusus Boks Susunan Redaksi Gambar 2 */}
-              {formType === "redaksi_box" && (
-                <div className="p-3 bg-stone-100 rounded-xl border border-stone-300 text-stone-700 text-xs space-y-1">
-                  <div className="font-bold text-stone-900 flex items-center gap-1.5">
-                    <BookOpen className="w-4 h-4 text-stone-700" />
-                    <span>Boks Susunan Redaksi (Format Resmi Cetak Koran Sesuai Gambar 2)</span>
-                  </div>
-                  <p className="text-[11px] leading-relaxed text-stone-600">
-                    Kotak ini menampilkan logo resmi hitam-putih, legalitas pers (UU Pokok Pers No. 40/1999 &amp; Dewan Pers SPRI), hierarki Dewan Pembina s/d jajaran wartawan, dan alamat kantor redaksi pusat persis seperti pada <strong>Gambar 2</strong>.
-                  </p>
-                  <p className="text-[10px] text-stone-500 font-semibold">
-                    * Gunakan pilihan lebar kotak di atas untuk mengatur lebar (rekomendasi: <strong>5 kolom</strong>).
-                  </p>
-                </div>
-              )}
-
-              {/* Text Columns & Dynamic Image Position Selector if type is text_columns */}
-              {formType === "text_columns" && (
-                <div className="space-y-3 p-3 bg-amber-50/50 rounded-xl border border-amber-200">
-                  <div>
-                    <label className="block font-bold text-stone-700 mb-1">
-                      Format Kolom Teks Berita (Khas Koran):
-                    </label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {[1, 2, 3, 4].map((col) => (
-                        <button
-                          key={col}
-                          type="button"
-                          onClick={() => setFormTextColumns(col)}
-                          className={`py-1.5 rounded-lg border text-xs font-bold transition-colors cursor-pointer ${
-                            formTextColumns === col
-                              ? "bg-[#E50914] text-white border-[#B91C1C]"
-                              : "bg-white text-stone-700 border-stone-200 hover:bg-stone-50"
-                          }`}
-                        >
-                          {col} Kolom Teks
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Dynamic Photo & Text Flow Layout */}
-                  <div>
-                    <label className="block font-bold text-stone-700 mb-1">
-                      Tata Letak Posisi Foto &amp; Alur Teks Berita:
-                    </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {[
-                        {
-                          id: "top",
-                          title: "Foto di Atas (Full)",
-                          desc: "Foto membentang penuh di atas, naskah teks di bawah",
-                          icon: "⬆️",
-                        },
-                        {
-                          id: "left",
-                          title: "Foto di Kiri",
-                          desc: "Foto di sisi kiri, naskah teks mengalir di sisi kanan",
-                          icon: "⬅️",
-                        },
-                        {
-                          id: "right",
-                          title: "Foto di Kanan",
-                          desc: "Foto di sisi kanan, naskah teks mengalir di sisi kiri",
-                          icon: "➡️",
-                        },
-                        {
-                          id: "bottom",
-                          title: "Foto di Bawah (Full)",
-                          desc: "Naskah teks di atas, foto membentang penuh di bawah",
-                          icon: "⬇️",
-                        },
-                      ].map((pos) => (
-                        <button
-                          key={pos.id}
-                          type="button"
-                          onClick={() => setFormImagePosition(pos.id as "top" | "left" | "right" | "bottom")}
-                          className={`p-2 rounded-lg border text-left flex flex-col justify-between transition-all cursor-pointer ${
-                            formImagePosition === pos.id
-                              ? "bg-amber-100 border-amber-600 ring-2 ring-amber-500/30 text-stone-900 font-bold shadow-xs"
-                              : "bg-white border-stone-200 text-stone-600 hover:bg-stone-50"
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5 font-bold text-xs">
-                            <span>{pos.icon}</span>
-                            <span>{pos.title}</span>
-                          </div>
-                          <p className="text-[9.5px] text-stone-500 mt-1 leading-tight">{pos.desc}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Font Size to Fill Space */}
-                  <div>
-                    <label className="block font-bold text-stone-700 mb-1">
-                      Ukuran Huruf Naskah (Membantu Mengisi Ruang Kosong):
-                    </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {[
-                        { id: "xs", label: "Kecil (7.5px)", sub: "Padat Khas Koran" },
-                        { id: "sm", label: "Sedang (8.5px)", sub: "Standar Terbaca" },
-                        { id: "base", label: "Besar (9.5px)", sub: "Mengisi Ruang Luas" },
-                      ].map((f) => (
-                        <button
-                          key={f.id}
-                          type="button"
-                          onClick={() => setFormFontSize(f.id as "xs" | "sm" | "base")}
-                          className={`py-1.5 px-2 rounded-lg border text-center transition-colors cursor-pointer ${
-                            formFontSize === f.id
-                              ? "bg-[#7F0000] text-white border-red-900 font-bold"
-                              : "bg-white text-stone-700 border-stone-200 hover:bg-stone-50"
-                          }`}
-                        >
-                          <div className="text-xs font-bold">{f.label}</div>
-                          <div className="text-[9.5px] opacity-80">{f.sub}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Pilihan Gaya Warna Tema Section (Bedakan Versi Lama vs Versi Baru) */}
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">
-                  Format Gaya Warna Section:
-                </label>
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
-                  {[
-                    { id: "blue", label: "Biru Klasik", badge: "Versi Lama (Gambar 1)", bg: "bg-[#D6EEFC]", border: "border-blue-400" },
-                    { id: "orange", label: "Oranye Modern", badge: "Versi Baru", bg: "bg-[#FA9805]", border: "border-orange-500" },
-                    { id: "white", label: "Putih Bersih", badge: "Standar", bg: "bg-white", border: "border-stone-300" },
-                    { id: "dark", label: "Gelap Elegan", badge: "Hitam Tokoh", bg: "bg-stone-900", border: "border-black" },
-                    { id: "red", label: "Merah Presisi", badge: "Aksen Berita", bg: "bg-red-700", border: "border-red-800" },
-                  ].map((tc) => (
-                    <button
-                      key={tc.id}
-                      type="button"
-                      onClick={() => setFormThemeColor(tc.id as NewspaperBlock["themeColor"])}
-                      className={`p-2 rounded-lg border text-left flex flex-col justify-between transition-all cursor-pointer ${
-                        formThemeColor === tc.id
-                          ? "ring-2 ring-red-600 border-red-600 bg-red-50/40"
-                          : "border-stone-200 bg-stone-50 hover:bg-stone-100"
-                      }`}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <span className={`w-3.5 h-3.5 rounded-full ${tc.bg} border ${tc.border} shrink-0`} />
-                        <span className="font-bold text-[11px] text-stone-900">{tc.label}</span>
-                      </div>
-                      <span className="text-[9px] text-stone-500 mt-1">{tc.badge}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Title input */}
-              <div>
-                <label className="block font-bold text-stone-700 mb-1">Judul / Headline:</label>
-                <input
-                  type="text"
-                  value={formTitle}
-                  onChange={(e) => setFormTitle(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg text-xs text-stone-900 focus:outline-none focus:border-red-600"
-                />
-              </div>
-
-              {/* Content textarea if text_columns */}
-              {formType === "text_columns" && (
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Isi Berita:</label>
-                  <textarea
-                    rows={4}
-                    value={formContent}
-                    onChange={(e) => setFormContent(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-stone-300 rounded-lg text-xs text-stone-900 focus:outline-none focus:border-red-600"
-                  />
-                </div>
-              )}
-
-              {/* Hero Greeting Specifics */}
-              {formType === "hero_greeting" && (
-                <div className="space-y-2 p-3 bg-stone-50 rounded-lg border border-stone-200">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <label className="block text-[11px] font-bold text-stone-700 mb-0.5">Ucapan:</label>
-                      <input
-                        type="text"
-                        value={formGreeting}
-                        onChange={(e) => setFormGreeting(e.target.value)}
-                        className="w-full px-2 py-1.5 bg-white border border-stone-300 rounded text-xs text-stone-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-stone-700 mb-0.5">Nama Pejabat:</label>
-                      <input
-                        type="text"
-                        value={formName}
-                        onChange={(e) => setFormName(e.target.value)}
-                        className="w-full px-2 py-1.5 bg-white border border-stone-300 rounded text-xs text-stone-900"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    <div>
-                      <label className="block text-[11px] font-bold text-stone-700 mb-0.5">Awalan Jabatan:</label>
-                      <input
-                        type="text"
-                        value={formPositionPrefix}
-                        onChange={(e) => setFormPositionPrefix(e.target.value)}
-                        className="w-full px-2 py-1.5 bg-white border border-stone-300 rounded text-xs text-stone-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-stone-700 mb-0.5">Jabatan:</label>
-                      <input
-                        type="text"
-                        value={formPosition}
-                        onChange={(e) => setFormPosition(e.target.value)}
-                        className="w-full px-2 py-1.5 bg-white border border-stone-300 rounded text-xs text-stone-900"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-stone-700 mb-0.5">Instansi:</label>
-                      <input
-                        type="text"
-                        value={formPositionSub}
-                        onChange={(e) => setFormPositionSub(e.target.value)}
-                        className="w-full px-2 py-1.5 bg-white border border-stone-300 rounded text-xs text-stone-900"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Image upload / URL with Live Preview & WebP status */}
-              <div className="space-y-2">
-                <label className="block font-bold text-stone-700">
-                  Foto Gambar (Otomatis Kompresi WebP):
-                </label>
-                <div className="flex gap-2 items-center">
-                  <input
-                    type="text"
-                    value={formImage}
-                    onChange={(e) => setFormImage(e.target.value)}
-                    placeholder="URL gambar atau unggah file di samping..."
-                    className="flex-1 px-3 py-2 bg-white border border-stone-300 rounded-lg text-xs text-stone-900"
-                  />
-                  <label className="px-3 py-2 bg-stone-100 hover:bg-stone-200 border border-stone-300 rounded-lg text-stone-700 font-bold cursor-pointer transition-colors flex items-center gap-1.5 shrink-0">
-                    <Upload className="w-3.5 h-3.5" />
-                    <span>{uploading ? "Mengompres..." : "Ganti Foto"}</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      disabled={uploading}
-                    />
-                  </label>
-                </div>
-
-                {/* Live Preview Card */}
-                {formImage && (
-                  <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-xl flex items-center gap-3">
-                    <div className="relative w-16 h-14 rounded-lg overflow-hidden border border-emerald-400 shrink-0 bg-white shadow-2xs">
-                      <img
-                        src={formImage}
-                        alt="Preview Foto"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).src = "/images/ads/iklan-bunga.jpeg";
-                        }}
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1 text-emerald-800 font-bold text-xs">
-                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Foto Berhasil Diunggah &amp; Siap Ditampilkan</span>
-                      </div>
-                      <p className="text-[10px] text-stone-600 truncate mt-0.5 font-mono">
-                        {formImage}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setFormImage("")}
-                      className="px-2 py-1 bg-red-100 hover:bg-red-200 text-red-700 text-[10px] font-bold rounded-md transition-colors cursor-pointer shrink-0"
-                      title="Hapus foto ini"
-                    >
-                      Hapus
-                    </button>
-                  </div>
-                )}
-
-                {uploading && (
-                  <div className="p-2.5 bg-amber-50 border border-amber-300 rounded-xl flex items-center gap-2 text-amber-900 text-xs font-bold animate-pulse">
-                    <RefreshCw className="w-4 h-4 animate-spin text-amber-600 shrink-0" />
-                    <span>Sedang memproses kompresi WebP &amp; mengunggah gambar...</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Modal Actions */}
-            <div className="pt-3 border-t border-stone-100 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setEditingBlock(null)}
-                className="px-4 py-2 rounded-lg text-xs font-semibold text-stone-600 hover:bg-stone-100"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                disabled={uploading}
-                onClick={handleSaveEditBlock}
-                className="px-5 py-2 rounded-lg text-xs font-bold bg-[#E50914] hover:bg-[#B91C1C] text-white shadow-xs cursor-pointer disabled:opacity-50"
-              >
-                {uploading ? "Sedang Mengompres..." : "Simpan Perubahan"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ========================================================= */}
       {/* 6. MODAL: PILIH ARTIKEL PORTAL */}
